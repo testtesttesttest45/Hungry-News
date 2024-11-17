@@ -1,4 +1,4 @@
-# hungry_news
+# Hungry News
 
 A new Flutter project.
 

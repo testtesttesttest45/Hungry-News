@@ -92,10 +92,10 @@ BEGIN
             VALUE "CompanyName", "com.example" "\0"
             VALUE "FileDescription", "hungry_news" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "hungry_news" "\0"
+            VALUE "InternalName", "Hungry News" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2024 com.example. All rights reserved." "\0"
             VALUE "OriginalFilename", "hungry_news.exe" "\0"
-            VALUE "ProductName", "hungry_news" "\0"
+            VALUE "ProductName", "Hungry News" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

@@ -1,6 +1,6 @@
 {
-    "name": "hungry_news",
-    "short_name": "hungry_news",
+    "name": "Hungry News",
+    "short_name": "Hungry News",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
