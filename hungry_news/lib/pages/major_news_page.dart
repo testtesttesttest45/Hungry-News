@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class MajorNewsPage extends StatefulWidget { // was stateless. need to be stateful to update the date
+class MajorNewsPage extends StatefulWidget {
+  // was stateless. need to be stateful to update the date
   final int? currentDay;
 
   const MajorNewsPage({super.key, this.currentDay});
@@ -52,18 +53,23 @@ class MajorNewsPageState extends State<MajorNewsPage> {
       weekEnd = lastDayOfMonth;
     }
 
-    int weekNumber = ((weekStart.difference(firstDayOfMonth).inDays) / 7).ceil() + 1;
+    int weekNumber =
+        ((weekStart.difference(firstDayOfMonth).inDays) / 7).ceil() + 1;
     int totalWeeks = ((lastDayOfMonth.day + (firstDayWeekday - 1)) / 7).ceil();
 
-    String formattedDate = DateFormat('dd MMM yyyy, EEEE, HHmm\'HRS\'').format(now);
-    String weekRange = '${DateFormat('dd MMM yyyy').format(weekStart)} - ${DateFormat('dd MMM yyyy').format(weekEnd)}';
+    String formattedDate =
+        DateFormat('dd MMM yyyy, EEEE, HHmm\'HRS\'').format(now);
+    String weekRange =
+        '${DateFormat('dd MMM yyyy').format(weekStart)} - ${DateFormat('dd MMM yyyy').format(weekEnd)}';
 
     return '$formattedDate\nDisplaying news from Week $weekNumber of $totalWeeks\n($weekRange)';
   }
 
   List<Widget> generateNewsItems() {
     DateTime today = currentDate;
-    List<Widget> newsItems = [];
+    List<Widget> newsItems = [
+        const SizedBox(height: 30),
+    ];
     for (int i = 0; i < 10; i++) {
       DateTime newsDate = today.subtract(Duration(days: i));
       String formattedDate = DateFormat('dd MMM yyyy').format(newsDate);
@@ -74,7 +80,9 @@ class MajorNewsPageState extends State<MajorNewsPage> {
           children: [
             Container(
               height: 100,
-              padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 40.0), // Increased horizontal padding
+              padding: const EdgeInsets.symmetric(
+                  vertical: 10.0,
+                  horizontal: 40.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -84,7 +92,8 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                     children: [
                       Text(
                         'Major News ${i + 1}',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 5),
                       Text(
@@ -107,10 +116,11 @@ class MajorNewsPageState extends State<MajorNewsPage> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0), // Add gap on the left and right
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0),
               child: Divider(
                 color: Colors.grey[400],
-                thickness: 1, // Optionally reduce the thickness
+                thickness: 1,
               ),
             ),
           ],
@@ -130,9 +140,13 @@ class MajorNewsPageState extends State<MajorNewsPage> {
               pinned: true,
               delegate: _StickyHeaderDelegate(
                 child: Container(
-                  height: 150, // Adjusted height for the red section
+                  height: 160,
                   color: Colors.red[800],
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.only(
+                      top: 30.0,
+                      left: 16.0,
+                      right: 16.0,
+                      bottom: 16.0),
                   child: Stack(
                     children: [
                       Column(
@@ -142,7 +156,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                           Text(
                             'Major News',
                             style: TextStyle(
-                              fontSize: 24, // Increased font size
+                              fontSize: 24,
                               fontWeight: FontWeight.bold,
                               color: Colors.orange[700],
                             ),
@@ -159,12 +173,13 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                         ],
                       ),
                       Positioned(
-                        right: 0, // Align to the top-right corner
+                        right: 0,
                         child: IconButton(
                           icon: const Icon(Icons.refresh, color: Colors.white),
                           onPressed: () {
                             setState(() {
-                              currentDate = DateTime.now(); // Update the date and time
+                              currentDate =
+                                  DateTime.now();
                             });
                           },
                         ),
@@ -190,14 +205,15 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   _StickyHeaderDelegate({required this.child});
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     return child;
   }
 
   @override
-  double get maxExtent => 150.0; // Adjusted to match the header height
+  double get maxExtent => 160.0;
   @override
-  double get minExtent => 150.0;
+  double get minExtent => 160.0;
   @override
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
     return true;
