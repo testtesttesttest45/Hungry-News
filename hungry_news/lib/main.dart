@@ -22,6 +22,13 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
+      builder: (context, child) {
+        // Remove the top padding caused by the system status bar
+        return MediaQuery(
+          data: MediaQuery.of(context).removePadding(removeTop: true),
+          child: child!,
+        );
+      },
       home: const MyHomePage(),
     );
   }
@@ -56,8 +63,10 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: PreferredSize(
         // title: Text(widget.title),
+        preferredSize: Size.zero,
+        child: Container(),
       ),
       body: IndexedStack(
         index: _selectedIndex,
@@ -80,4 +89,6 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
+
+  
 }
