@@ -10,13 +10,13 @@
             "type": "dart"
         },
         {
-            "name": "hungry_news (profile mode)",
+            "name": "Hungry News (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "hungry_news (release mode)",
+            "name": "Hungry News (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

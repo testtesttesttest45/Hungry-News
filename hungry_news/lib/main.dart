@@ -40,6 +40,7 @@ class _MyHomePageState extends State<MyHomePage> {
   static const List<Widget> _pages = [
     PreferenceNewsPage(),
     PastNewsPage(),
+    // MajorNewsPage(), major news page has a parameter to set the current day for debug. pass currentDay: 2
     MajorNewsPage(),
     SavedNewsPage(),
     SearchPage(),
