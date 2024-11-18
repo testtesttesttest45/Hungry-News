@@ -91,7 +91,7 @@ class _MyHomePageState extends State<MyHomePage> {
         const PastNewsPage(),
         const MajorNewsPage(),
         const SavedNewsPage(),
-        const SearchPage(),
+        const SearchNewsPage(),
         SettingsPage(
           onThemeChanged: widget.onThemeChanged, //  callback to SettingsPage
         ),
@@ -116,7 +116,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Preferences'),
+          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Preference'),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Past News'),
           BottomNavigationBarItem(icon: Icon(Icons.public), label: 'Major News'),
           BottomNavigationBarItem(icon: Icon(Icons.save), label: 'Saved News'),
