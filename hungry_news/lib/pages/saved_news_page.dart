@@ -4,13 +4,12 @@ import 'package:intl/intl.dart';
 class SavedNewsPage extends StatelessWidget {
   const SavedNewsPage({super.key});
 
-  List<Widget> generateSavedNewsItems() {
-    // start from todays date and generate recent dates
+  List<Widget> generateSavedNewsItems(BuildContext context) {
     DateTime today = DateTime.now();
     List<Widget> savedNewsItems = [
       const SizedBox(height: 30),
     ];
-    
+
     for (int i = 0; i < 4; i++) {
       DateTime newsDate = today.subtract(Duration(days: i));
       String formattedDate = DateFormat('dd MMM yyyy').format(newsDate);
@@ -31,15 +30,14 @@ class SavedNewsPage extends StatelessWidget {
                     children: [
                       Text(
                         'Saved News ${i + 1}',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                       ),
                       const SizedBox(height: 5),
                       Text(
                         formattedDate,
-                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
                   ),
@@ -60,7 +58,7 @@ class SavedNewsPage extends StatelessWidget {
     return savedNewsItems;
   }
 
-  @override
+   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
@@ -73,7 +71,7 @@ class SavedNewsPage extends StatelessWidget {
                   height: 160,
                   color: Colors.red[800],
                   padding: const EdgeInsets.only(
-                    top: 30.0,
+                    top: 40.0,
                     left: 16.0,
                     right: 16.0,
                     bottom: 16.0,
@@ -96,7 +94,7 @@ class SavedNewsPage extends StatelessWidget {
               ),
             ),
             SliverList(
-              delegate: SliverChildListDelegate(generateSavedNewsItems()),
+              delegate: SliverChildListDelegate(generateSavedNewsItems(context)),
             ),
           ],
         ),

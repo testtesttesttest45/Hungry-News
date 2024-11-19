@@ -32,7 +32,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   height: 160,
                   color: Colors.red[800],
                   padding: const EdgeInsets.only(
-                    top: 30.0,
+                    top: 40.0,
                     left: 16.0,
                     right: 16.0,
                     bottom: 16.0,
@@ -63,15 +63,17 @@ class _SettingsPageState extends State<SettingsPage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Appearance',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                          style: Theme.of(context).textTheme.bodyLarge,
                         ),
                         DropdownButton<String>(
                           value: _isDarkMode ? "Dark" : "Burger",
                           items: const [
-                            DropdownMenuItem(value: "Burger", child: Text("Burger")),
-                            DropdownMenuItem(value: "Dark", child: Text("Dark")),
+                            DropdownMenuItem(
+                                value: "Burger", child: Text("Burger")),
+                            DropdownMenuItem(
+                                value: "Dark", child: Text("Dark")),
                           ],
                           onChanged: (value) {
                             setState(() {
@@ -84,21 +86,22 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Text(
                       'Inspired by Hungry Jacks Burgers',
-                      style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                      style:
+                          Theme.of(context).textTheme.bodyMedium,
                     ),
                   ),
                   const SizedBox(height: 500),
                   Center(
                     child: ElevatedButton(
-                      onPressed: () {
-                      },
+                      onPressed: () {},
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red[800],
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24.0, vertical: 12.0),
                       ),
                       child: const Text(
                         'Reset App',
@@ -122,7 +125,8 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   _StickyHeaderDelegate({required this.child});
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     return child;
   }
 

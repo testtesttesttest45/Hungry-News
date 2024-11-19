@@ -40,26 +40,37 @@ class _MyAppState extends State<MyApp> {
       _themeMode = isDarkMode ? ThemeMode.dark : ThemeMode.light;
     });
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isDarkMode', isDarkMode); // save user appearance choice
+    await prefs.setBool(
+        'isDarkMode', isDarkMode); // save user appearance choice
   }
+
+  final lightTheme = ThemeData(
+    brightness: Brightness.light,
+    scaffoldBackgroundColor: Colors.grey[100],
+    textTheme: const TextTheme(
+      bodyLarge: TextStyle(color: Colors.black87, fontSize: 18),
+      bodyMedium: TextStyle(color: Colors.black54, fontSize: 16),
+    ),
+    dividerColor: Colors.grey[300],
+  );
+
+  final darkTheme = ThemeData(
+    brightness: Brightness.dark,
+    scaffoldBackgroundColor: Colors.black,
+    textTheme: const TextTheme(
+      bodyLarge: TextStyle(color: Colors.white, fontSize: 18),
+      bodyMedium: TextStyle(color: Colors.grey, fontSize: 16),
+    ),
+    dividerColor: Colors.grey[700],
+  );
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Hungry News',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.light,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        colorScheme: ColorScheme.dark(
-          primary: Colors.amber[800] ?? Colors.amber,
-        ),
-        useMaterial3: true,
-      ),
+      theme: lightTheme,
+      darkTheme: darkTheme,
       themeMode: _themeMode,
       builder: (context, child) {
         return MediaQuery(
@@ -88,6 +99,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   List<Widget> _pages(BuildContext context) => [
         const PreferenceNewsPage(),
+        // PastNewsPage(testDate: DateTime(2024, 11, 10)),
         const PastNewsPage(),
         const MajorNewsPage(),
         const SavedNewsPage(),
@@ -116,15 +128,19 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Preference'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Past News'),
-          BottomNavigationBarItem(icon: Icon(Icons.public), label: 'Major News'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.favorite), label: 'Preference'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.history), label: 'Past News'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.public), label: 'Major News'),
           BottomNavigationBarItem(icon: Icon(Icons.save), label: 'Saved News'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.settings), label: 'Settings'),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.amber[800] ?? Colors.amber,
+        selectedItemColor: Colors.amber[800],
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
         backgroundColor: Theme.of(context).colorScheme.surface,

@@ -17,7 +17,7 @@ class SearchNewsPage extends StatelessWidget {
                   height: 160,
                   color: Colors.red[800],
                   padding: const EdgeInsets.only(
-                    top: 30.0,
+                    top: 40.0,
                     left: 16.0,
                     right: 16.0,
                     bottom: 16.0,
@@ -54,9 +54,9 @@ class SearchNewsPage extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
+                        Text(
                           '3 results found',
-                          style: TextStyle(fontSize: 18, color: Colors.black54),
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         const Divider(),
                         for (int i = 1; i <= 3; i++)
@@ -66,35 +66,47 @@ class SearchNewsPage extends StatelessWidget {
                               Container(
                                 height: 100,
                                 padding: const EdgeInsets.symmetric(
-                                    vertical: 10.0,
-                                    horizontal: 40.0),
+                                    vertical: 10.0, horizontal: 40.0),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Text(
                                           'Search Result $i',
-                                          style: const TextStyle(
-                                              fontSize: 18, fontWeight: FontWeight.bold),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyLarge
+                                              ?.copyWith(
+                                                fontWeight: FontWeight
+                                                    .bold,
+                                              ),
                                         ),
                                         const SizedBox(height: 5),
                                         Text(
                                           DateFormat('dd MMM yyyy').format(
-                                            DateTime.now().subtract(Duration(days: i * 2)),
+                                            DateTime.now().subtract(
+                                                Duration(days: i * 2)),
                                           ),
-                                          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                                          style: TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.grey[600]),
                                         ),
                                       ],
                                     ),
-                                    Icon(Icons.arrow_forward, color: Colors.grey[600]),
+                                    Icon(Icons.arrow_forward,
+                                        color: Colors.grey[600]),
                                   ],
                                 ),
                               ),
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0),
                                 child: Divider(
                                   color: Colors.grey[400],
                                   thickness: 1,
@@ -121,7 +133,8 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   _StickyHeaderDelegate({required this.child});
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     return child;
   }
 

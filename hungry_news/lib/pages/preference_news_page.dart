@@ -16,7 +16,7 @@ class PreferenceNewsPage extends StatelessWidget {
                   height: 160,
                   color: Colors.red[800],
                   padding: const EdgeInsets.only(
-                    top: 30.0,
+                    top: 40.0,
                     left: 16.0,
                     right: 16.0,
                     bottom: 16.0,
@@ -42,7 +42,6 @@ class PreferenceNewsPage extends StatelessWidget {
             SliverList(
               delegate: SliverChildListDelegate(
                 [
-                  // Placeholder for additional settings content
                   const Center(
                     child: Padding(
                       padding: EdgeInsets.all(16.0),
@@ -73,7 +72,7 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  double get maxExtent => 160.0; // Same height as the red section in MajorNewsPage
+  double get maxExtent => 160.0;
   @override
   double get minExtent => 160.0;
   @override
