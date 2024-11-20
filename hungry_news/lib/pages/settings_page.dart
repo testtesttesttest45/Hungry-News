@@ -100,7 +100,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               .copyWith(fontStyle: FontStyle.italic),
                     ),
                   ),
-                  const SizedBox(height: 450),
+                  const SizedBox(height: 480),
                   Center(
                     child: ElevatedButton(
                       onPressed: () {},

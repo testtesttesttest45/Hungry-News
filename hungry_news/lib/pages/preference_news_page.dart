@@ -237,7 +237,7 @@ class _PreferenceNewsPageState extends State<PreferenceNewsPage> {
                 [
                   Container(
                     margin: const EdgeInsets.symmetric(
-                        vertical: 48.0, horizontal: 16.0),
+                        vertical: 16.0, horizontal: 16.0),
                     padding: const EdgeInsets.all(16.0),
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
@@ -262,6 +262,16 @@ class _PreferenceNewsPageState extends State<PreferenceNewsPage> {
                               ?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: Theme.of(context).colorScheme.secondary,
+                              ),
+                        ),
+                        Text(
+                          'Tap topic to hide, long press to edit/delete',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.secondary,
+                                fontStyle: FontStyle.italic,
                               ),
                         ),
                         const SizedBox(height: 10),
@@ -466,6 +476,17 @@ class _PreferenceNewsPageState extends State<PreferenceNewsPage> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Close',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
                 if (topicController.text.isNotEmpty) {
                   setState(() {
                     topics.add(topicController.text);
@@ -475,17 +496,6 @@ class _PreferenceNewsPageState extends State<PreferenceNewsPage> {
               },
               child: Text(
                 'Add',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                'Close',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.secondary,
                     ),
