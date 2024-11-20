@@ -15,7 +15,7 @@ class SearchNewsPage extends StatelessWidget {
               delegate: _StickyHeaderDelegate(
                 child: Container(
                   height: 160,
-                  color: Colors.red[800],
+                  color: Theme.of(context).appBarTheme.backgroundColor,
                   padding: const EdgeInsets.only(
                     top: 40.0,
                     left: 16.0,
@@ -26,12 +26,13 @@ class SearchNewsPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
+                      const SizedBox(height: 10),
                       Text(
                         'Search News',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Colors.orange[700],
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                       ),
                     ],
@@ -83,8 +84,7 @@ class SearchNewsPage extends StatelessWidget {
                                               .textTheme
                                               .bodyLarge
                                               ?.copyWith(
-                                                fontWeight: FontWeight
-                                                    .bold,
+                                                fontWeight: FontWeight.bold,
                                               ),
                                         ),
                                         const SizedBox(height: 5),
@@ -95,7 +95,9 @@ class SearchNewsPage extends StatelessWidget {
                                           ),
                                           style: TextStyle(
                                               fontSize: 16,
-                                              color: Colors.grey[600]),
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .secondary),
                                         ),
                                       ],
                                     ),
@@ -108,7 +110,7 @@ class SearchNewsPage extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 16.0),
                                 child: Divider(
-                                  color: Colors.grey[400],
+                                  color: Theme.of(context).dividerColor,
                                   thickness: 1,
                                 ),
                               ),

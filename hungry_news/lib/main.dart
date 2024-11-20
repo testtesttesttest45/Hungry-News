@@ -46,20 +46,60 @@ class _MyAppState extends State<MyApp> {
 
   final lightTheme = ThemeData(
     brightness: Brightness.light,
-    scaffoldBackgroundColor: Colors.grey[100],
+    scaffoldBackgroundColor: Colors.orange[50],
+    primaryColor: Colors.red[800],
+    cardColor: Colors.white,
+    colorScheme: ColorScheme(
+      brightness: Brightness.light,
+      primary: Colors.red[800]!,
+      onPrimary: Colors.white,
+      secondary: Colors.orange[700]!,
+      onSecondary: Colors.white,
+      surface: Colors.orange[
+          50]!,
+      onSurface:
+          Colors.black87,
+      error: Colors.red,
+      onError: Colors.white,
+      tertiary: Colors.orange[100]!,
+    ),
     textTheme: const TextTheme(
-      bodyLarge: TextStyle(color: Colors.black87, fontSize: 18),
-      bodyMedium: TextStyle(color: Colors.black54, fontSize: 16),
+      bodyLarge: TextStyle(color: Colors.black, fontSize: 18),
+      bodyMedium:
+          TextStyle(color: Colors.black, fontSize: 16),
+    ),
+    appBarTheme: AppBarTheme(
+      backgroundColor: Colors.red[800],
+      foregroundColor: Colors.white,
+      elevation: 0,
     ),
     dividerColor: Colors.grey[300],
   );
 
   final darkTheme = ThemeData(
     brightness: Brightness.dark,
-    scaffoldBackgroundColor: Colors.black,
+    scaffoldBackgroundColor: Colors.grey[900],
+    primaryColor: Colors.red[800],
+    cardColor: Colors.grey[800]!,
+    colorScheme: ColorScheme(
+      brightness: Brightness.dark,
+      primary: Colors.red[800]!,
+      onPrimary: Colors.white,
+      secondary: Colors.orange[700]!,
+      onSecondary: Colors.white,
+      surface: Colors.grey[800]!,
+      onSurface: Colors.white,
+      error: Colors.red,
+      onError: Colors.white,
+    ),
     textTheme: const TextTheme(
       bodyLarge: TextStyle(color: Colors.white, fontSize: 18),
-      bodyMedium: TextStyle(color: Colors.grey, fontSize: 16),
+      bodyMedium: TextStyle(color: Colors.white, fontSize: 16),
+    ),
+    appBarTheme: AppBarTheme(
+      backgroundColor: Colors.red[800],
+      foregroundColor: Colors.white,
+      elevation: 0,
     ),
     dividerColor: Colors.grey[700],
   );
@@ -95,7 +135,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _selectedIndex = 2; // Display Major News page by default
+  int _selectedIndex = 2; //  Major News page by default
 
   List<Widget> _pages(BuildContext context) => [
         const PreferenceNewsPage(),

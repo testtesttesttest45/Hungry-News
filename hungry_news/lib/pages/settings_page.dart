@@ -30,7 +30,7 @@ class _SettingsPageState extends State<SettingsPage> {
               delegate: _StickyHeaderDelegate(
                 child: Container(
                   height: 160,
-                  color: Colors.red[800],
+                  color: Theme.of(context).appBarTheme.backgroundColor,
                   padding: const EdgeInsets.only(
                     top: 40.0,
                     left: 16.0,
@@ -41,12 +41,13 @@ class _SettingsPageState extends State<SettingsPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
+                      const SizedBox(height: 10),
                       Text(
                         'Settings',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Colors.orange[700],
+                          color: Theme.of(context).colorScheme.secondary,
                         ),
                       ),
                     ],
@@ -91,21 +92,26 @@ class _SettingsPageState extends State<SettingsPage> {
                     child: Text(
                       'Inspired by Hungry Jacks Burgers',
                       style:
-                          Theme.of(context).textTheme.bodyMedium,
+                          // Theme.of(context).textTheme.bodyMedium,
+                          // add theme bodyMedium and italics
+                          Theme.of(context)
+                              .textTheme
+                              .bodyMedium!
+                              .copyWith(fontStyle: FontStyle.italic),
                     ),
                   ),
-                  const SizedBox(height: 500),
+                  const SizedBox(height: 450),
                   Center(
                     child: ElevatedButton(
                       onPressed: () {},
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red[800],
+                        backgroundColor: Theme.of(context).primaryColor,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 24.0, vertical: 12.0),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Reset App',
-                        style: TextStyle(fontSize: 16, color: Colors.white),
+                        style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onPrimary),
                       ),
                     ),
                   ),

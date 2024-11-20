@@ -126,7 +126,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
               delegate: _StickyHeaderDelegate(
                 child: Container(
                   height: 160,
-                  color: Colors.red[800],
+                  color: Theme.of(context).appBarTheme.backgroundColor,
                   padding: const EdgeInsets.only(
                       top: 40.0, left: 16.0, right: 16.0, bottom: 16.0),
                   child: Stack(
@@ -135,20 +135,21 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
+                          const SizedBox(height: 10),
                           Text(
                             'Major News',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: Colors.orange[700],
+                              color: Theme.of(context).colorScheme.secondary,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
                           Text(
                             getFormattedDate(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onPrimary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
