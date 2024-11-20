@@ -19,8 +19,7 @@ class SavedNewsPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              height: 100,
-              padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 40.0),
+              padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 32.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -45,10 +44,10 @@ class SavedNewsPage extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 2.0),
               child: Divider(
                 color: Theme.of(context).dividerColor,
-                thickness: 1,
+                thickness: 3,
               ),
             ),
           ],

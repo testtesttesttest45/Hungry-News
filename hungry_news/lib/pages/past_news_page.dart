@@ -45,9 +45,8 @@ class _PastNewsPageState extends State<PastNewsPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              height: 100,
               padding:
-                  const EdgeInsets.symmetric(vertical: 10.0, horizontal: 40.0),
+                  const EdgeInsets.symmetric(vertical: 10.0, horizontal: 32.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -85,7 +84,7 @@ class _PastNewsPageState extends State<PastNewsPage> {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Divider(
                 color: Theme.of(context).dividerColor,
-                thickness: 1,
+                thickness: 3,
               ),
             ),
           ],

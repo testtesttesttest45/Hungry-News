@@ -8,10 +8,25 @@ class PreferenceNewsPage extends StatefulWidget {
   State<PreferenceNewsPage> createState() => _PreferenceNewsPageState();
 }
 
+class NewsItem {
+  final String title;
+  final String topic;
+  final String date;
+  final bool isRead;
+
+  NewsItem({
+    required this.title,
+    required this.topic,
+    required this.date,
+    this.isRead = false,
+  });
+}
+
 class _PreferenceNewsPageState extends State<PreferenceNewsPage> {
   late DateTime currentDate;
   late DateTime referenceDate;
   List<String> topics = ["Space", "War"];
+  List<String> hiddenTopics = [];
 
   @override
   void initState() {
@@ -32,6 +47,119 @@ class _PreferenceNewsPageState extends State<PreferenceNewsPage> {
     DateTime weekEnd = weekStart.add(const Duration(days: 6)); // sundays
 
     return '${DateFormat('dd MMM yyyy').format(weekStart)} - ${DateFormat('dd MMM yyyy').format(weekEnd)}';
+  }
+
+  List<NewsItem> generateNewsData() {
+    DateTime today = currentDate;
+    List<NewsItem> newsData = [];
+
+    for (int i = 0; i < 11; i++) {
+      DateTime newsDate = today.subtract(Duration(days: i));
+      String formattedDate = DateFormat('dd MMM yyyy').format(newsDate);
+
+      String topic = i % 2 == 0 ? "War" : "Space";
+      bool isRead = i < 3;
+
+      newsData.add(
+        NewsItem(
+          title: '$topic News ${i + 1}',
+          topic: topic,
+          date: formattedDate,
+          isRead: isRead,
+        ),
+      );
+    }
+    return newsData;
+  }
+
+  List<Widget> generateNewsItems() {
+    List<NewsItem> newsData = generateNewsData();
+    List<Widget> newsItems = [];
+
+    for (var news in newsData) {
+      if (hiddenTopics.contains(news.topic)) continue;
+
+      newsItems.add(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(vertical: 10.0, horizontal: 32.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              news.title,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(width: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 4.0, horizontal: 8.0),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.secondary,
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                              child: Text(
+                                news.topic,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSecondary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          news.date,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (news.isRead)
+                    const CircleAvatar(
+                      radius: 12,
+                      backgroundColor: Colors.green,
+                      child: Icon(
+                        Icons.check,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Divider(
+                color: Theme.of(context).dividerColor,
+                thickness: 3,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return newsItems;
   }
 
   @override
@@ -109,7 +237,7 @@ class _PreferenceNewsPageState extends State<PreferenceNewsPage> {
                 [
                   Container(
                     margin: const EdgeInsets.symmetric(
-                        vertical: 16.0, horizontal: 16.0),
+                        vertical: 48.0, horizontal: 16.0),
                     padding: const EdgeInsets.all(16.0),
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
@@ -140,44 +268,109 @@ class _PreferenceNewsPageState extends State<PreferenceNewsPage> {
                         Wrap(
                           spacing: 8.0,
                           runSpacing: 8.0,
-                          children: topics
-                              .map(
-                                (topic) => Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 8.0, horizontal: 16.0),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        Theme.of(context).colorScheme.secondary,
-                                    borderRadius: BorderRadius.circular(25),
+                          children: topics.map((topic) {
+                            bool isHidden = hiddenTopics.contains(topic);
+
+                            // number of news with the topic
+                            int topicCount = generateNewsData()
+                                .where((news) => news.topic == topic)
+                                .length;
+
+                            Color pillColor = isHidden
+                                ? Theme.of(context)
+                                    .colorScheme
+                                    .secondary
+                                    .withOpacity(0.6)
+                                : Theme.of(context).colorScheme.secondary;
+
+                            return GestureDetector(
+                              onLongPress: () =>
+                                  _showEditTopicDialog(context, topic),
+                              onTap: () {
+                                setState(() {
+                                  if (isHidden) {
+                                    hiddenTopics.remove(topic);
+                                  } else {
+                                    hiddenTopics.add(topic);
+                                  }
+                                });
+                              },
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8.0, horizontal: 16.0),
+                                    decoration: BoxDecoration(
+                                      color: pillColor,
+                                      borderRadius: BorderRadius.circular(25),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          topic,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSecondary,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                        ),
+                                        if (isHidden)
+                                          const SizedBox(
+                                              width:
+                                                  5), // add space before the eye icon
+                                        if (isHidden)
+                                          Icon(
+                                            Icons.visibility_off,
+                                            size: 16,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSecondary,
+                                          ),
+                                      ],
+                                    ),
                                   ),
-                                  child: Text(
-                                    topic,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(
+                                  if (topicCount > 0)
+                                    Positioned(
+                                      top: -5,
+                                      right: -5,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6.0),
+                                        decoration: BoxDecoration(
                                           color: Theme.of(context)
                                               .colorScheme
-                                              .onSecondary,
-                                          fontWeight: FontWeight.w500,
+                                              .primary,
+                                          shape: BoxShape.circle,
                                         ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                        ),
+                                        child: Text(
+                                          '$topicCount',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        )
                       ],
                     ),
                   ),
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Text(
-                        'Preference news articles go here',
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    ),
-                  ),
+                  ...generateNewsItems(),
                 ],
               ),
             ),
@@ -282,7 +475,9 @@ class _PreferenceNewsPageState extends State<PreferenceNewsPage> {
               },
               child: Text(
                 'Add',
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
               ),
             ),
             TextButton(
@@ -290,11 +485,72 @@ class _PreferenceNewsPageState extends State<PreferenceNewsPage> {
                 Navigator.of(context).pop();
               },
               child: Text(
-                'Cancel',
-                style: Theme.of(context).textTheme.bodyMedium,
+                'Close',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
               ),
             ),
-            
+          ],
+        );
+      },
+    );
+  }
+
+  void _showEditTopicDialog(BuildContext context, String topic) {
+    final TextEditingController topicController =
+        TextEditingController(text: topic);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit Topic'),
+          content: TextField(
+            controller: topicController,
+            decoration: const InputDecoration(hintText: 'Enter new topic name'),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  topics.remove(topic);
+                  // Remove all news associated with the topic
+                  hiddenTopics.add(topic);
+                });
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Delete',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  int index = topics.indexOf(topic);
+                  if (index != -1) topics[index] = topicController.text;
+                });
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Save',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+              ),
+            ),
           ],
         );
       },
