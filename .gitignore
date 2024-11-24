@@ -1,0 +1,28 @@
+# Byte-compiled / optimized / DLL files
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+
+# Caches and logs
+**/cache/
+**/*.log
+
+# Dataset directory and files in the backend
+news_backend/dataset/
+news_backend/*.csv
+
+# Virtual environment in the backend
+news_backend/venv/
+
+# Jupyter notebook checkpoints in the backend
+news_backend/.ipynb_checkpoints/
+
+# Machine learning models in the backend
+news_backend/*.joblib
+
+# Other files and folders to ignore in both frontend and backend
+*.sqlite3
+.DS_Store
+.vscode/
+.idea/
+*.swp
