@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+
 import 'pages/preference_news_page.dart';
 import 'pages/past_news_page.dart';
 import 'pages/major_news_page.dart';
@@ -8,6 +11,8 @@ import 'pages/search_page.dart';
 import 'pages/settings_page.dart';
 
 void main() {
+  tz.initializeTimeZones();
+  tz.setLocalLocation(tz.getLocation('Asia/Singapore'));
   runApp(const MyApp());
 }
 

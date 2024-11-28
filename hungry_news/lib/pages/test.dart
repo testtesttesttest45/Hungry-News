@@ -1,21 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '/utils/time_helper.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-
-DateTime parseNewsDate(String dateString) {
-  // example: Thu, 28 Nov 2024 11:19:09 GMT
-  DateFormat format = DateFormat('EEE, dd MMM yyyy HH:mm:ss \'GMT\'');
-  try {
-    DateTime dateTime = format.parse(dateString, true).toUtc();
-    return dateTime;
-  } catch (e) {
-    return DateTime.now(); // return current date if parsing fails
-  }
-}
 
 class MajorNewsPage extends StatefulWidget {
+  // was stateless. need to be stateful to update the date
   final int? currentDay;
   final DateTime? testDate;
 
@@ -27,14 +15,11 @@ class MajorNewsPage extends StatefulWidget {
 
 class MajorNewsPageState extends State<MajorNewsPage> {
   late DateTime currentDate;
-  List<dynamic> newsData = [];
-  bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
     currentDate = getToday();
-    fetchNews();
   }
 
   DateTime getToday() {
@@ -48,83 +33,67 @@ class MajorNewsPageState extends State<MajorNewsPage> {
     }
   }
 
-  Future<void> fetchNews() async {
-    setState(() {
-      isLoading = true;
-    });
-    try {
-      final response =
-          await http.get(Uri.parse('http://192.168.1.83:5000/news'));
-      if (response.statusCode == 200) {
-        setState(() {
-          newsData = jsonDecode(response.body)
-            ..sort((a, b) => parseNewsDate(b['datetime']).compareTo(
-                parseNewsDate(a['datetime'])));
-          isLoading = false;
-        });
-      } else {
-        throw Exception('Failed to load news');
-      }
-    } catch (e) {
-      print('Caught error: $e');
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
-
   String getFormattedDate() {
     DateTime now = currentDate;
-    DateTime weekStart = now.subtract(Duration(days: now.weekday - 1));
+
+    // serch the current week's Monday
+    int currentDayWeekday = now.weekday;
+    DateTime weekStart = now.subtract(Duration(days: currentDayWeekday - 1));
     DateTime weekEnd = weekStart.add(const Duration(days: 6));
-    return '${DateFormat('dd MMM yyyy, EEEE, HHmm\'HRS\'').format(now)}\nDisplaying news from ${DateFormat('dd MMM yyyy').format(weekStart)} - ${DateFormat('dd MMM yyyy').format(weekEnd)}';
+
+    String formattedDate =
+        DateFormat('dd MMM yyyy, EEEE, HHmm\'HRS\'').format(now);
+    String weekRange =
+        '${DateFormat('dd MMM yyyy').format(weekStart)} - ${DateFormat('dd MMM yyyy').format(weekEnd)}';
+
+    return '$formattedDate\nDisplaying news from $weekRange';
   }
 
   List<Widget> generateNewsItems() {
-    if (isLoading) {
-      return [const Center(child: CircularProgressIndicator())];
-    }
-    List<Widget> newsWidgets = [
-      const SizedBox(height: 30),
-    ];
+  DateTime today = currentDate;
+  List<Widget> newsItems = [
+    const SizedBox(height: 30),
+  ];
 
-    newsWidgets.addAll(newsData.map((news) {
-      bool isRead = news['is_read'] == 1;
-      DateTime newsDateTime =
-          parseNewsDate(news['datetime']);
-      return Column(
+  for (int i = 0; i < 10; i++) {
+    DateTime newsDate = today.subtract(Duration(days: i));
+    String formattedDate = DateFormat('dd MMM yyyy').format(newsDate);
+
+    newsItems.add(
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding:
-                const EdgeInsets.symmetric(vertical: 10.0, horizontal: 32.0),
+            padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 32.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        news['title'], // Display news title from backend
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyLarge
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        DateFormat('dd MMM yyyy, HH:mm').format(
-                            newsDateTime),
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Major News ${i + 1}',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      formattedDate,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
                 ),
-                if (isRead)
+                if (i < 3)
                   const CircleAvatar(
                     radius: 12,
                     backgroundColor: Colors.green,
-                    child: Icon(Icons.check, color: Colors.white, size: 16),
+                    child: Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 16,
+                    ),
                   ),
               ],
             ),
@@ -137,11 +106,12 @@ class MajorNewsPageState extends State<MajorNewsPage> {
             ),
           ),
         ],
-      );
-    }).toList());
-
-    return newsWidgets;
+      ),
+    );
   }
+  return newsItems;
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -161,6 +131,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           const SizedBox(height: 10),
                           Text(
@@ -186,15 +157,9 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                         right: 0,
                         child: IconButton(
                           icon: const Icon(Icons.refresh, color: Colors.white),
-                          onPressed: () async {
+                          onPressed: () {
                             setState(() {
-                              isLoading = true;
-                            });
-                            await fetchNews();
-                            setState(() {
-                              currentDate = TimeHelper
-                                  .currentTime;
-                              isLoading = false;
+                              currentDate = TimeHelper.currentTime; 
                             });
                           },
                         ),
@@ -204,15 +169,9 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                 ),
               ),
             ),
-            isLoading
-                ? const SliverFillRemaining(
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                : SliverList(
-                    delegate: SliverChildListDelegate(
-                      generateNewsItems(),
-                    ),
-                  ),
+            SliverList(
+              delegate: SliverChildListDelegate(generateNewsItems()),
+            ),
           ],
         ),
       ),
@@ -227,15 +186,16 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(
-          BuildContext context, double shrinkOffset, bool overlapsContent) =>
-      child;
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return child;
+  }
 
   @override
   double get maxExtent => 160.0;
   @override
   double get minExtent => 160.0;
-
   @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
-      false;
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
+    return true;
+  }
 }
