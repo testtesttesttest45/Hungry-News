@@ -30,6 +30,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
   List<dynamic> newsData = [];
   bool isLoading = false;
   String errorMessage = '';
+  bool isReversed = false;
 
   @override
   void initState() {
@@ -60,9 +61,17 @@ class MajorNewsPageState extends State<MajorNewsPage> {
       if (response.statusCode == 200) {
         setState(() {
           newsData = jsonDecode(response.body)
-            ..sort((a, b) => parseNewsDate(b['datetime'])
-                .compareTo(parseNewsDate(a['datetime'])));
+            ..sort((a, b) {
+              int comparison = parseNewsDate(b['datetime'])
+                  .compareTo(parseNewsDate(a['datetime']));
+              return isReversed ? -comparison : comparison;
+            });
           isLoading = false;
+        });
+      } else if (response.statusCode == 503) {
+        setState(() {
+          isLoading = false;
+          errorMessage = "Please wait while I generate this week's database";
         });
       } else {
         throw Exception('Failed to load news');
@@ -88,7 +97,13 @@ class MajorNewsPageState extends State<MajorNewsPage> {
     }
     if (errorMessage.isNotEmpty) {
       return [
-        Center(child: Text(errorMessage))
+        const SizedBox(height: 100),
+        Center(
+          child: Text(
+            errorMessage,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        )
       ];
     }
 
@@ -103,6 +118,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
         )
       ];
     }
+
     List<Widget> newsWidgets = [
       const SizedBox(height: 30),
     ];
@@ -164,70 +180,99 @@ class MajorNewsPageState extends State<MajorNewsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _StickyHeaderDelegate(
-                child: Container(
-                  height: 160,
-                  color: Theme.of(context).appBarTheme.backgroundColor,
-                  padding: const EdgeInsets.only(
-                      top: 40.0, left: 16.0, right: 16.0, bottom: 16.0),
-                  child: Stack(
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 10),
-                          Text(
-                            'Major News',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.secondary,
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await fetchNews();
+            setState(() {
+              currentDate = DateTime.now();
+            });
+          },
+          child: CustomScrollView(
+            slivers: [
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _StickyHeaderDelegate(
+                  child: Container(
+                    height: 160,
+                    color: Theme.of(context).appBarTheme.backgroundColor,
+                    padding: const EdgeInsets.only(
+                        top: 40.0, left: 16.0, right: 16.0, bottom: 16.0),
+                    child: Stack(
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 10),
+                            Text(
+                              'Major News',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.secondary,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            getFormattedDate(),
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              fontWeight: FontWeight.w500,
+                            const SizedBox(height: 10),
+                            Text(
+                              getFormattedDate(),
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      Positioned(
-                        key: ValueKey(
-                            currentDate),
-                        right: 0,
-                        child: IconButton(
-                          icon: const Icon(Icons.refresh, color: Colors.white),
-                          onPressed: () async {
-                            await fetchNews();
-                            setState(() {
-                              currentDate = DateTime.now();
-                            });
-                          },
+                          ],
                         ),
-                      ),
-                    ],
+                        Positioned(
+                          key: ValueKey(currentDate),
+                          right: 0,
+                          child: IconButton(
+                            icon:
+                                const Icon(Icons.refresh, color: Colors.white),
+                            onPressed: () async {
+                              await fetchNews();
+                              setState(() {
+                                currentDate = DateTime.now();
+                              });
+                            },
+                          ),
+                        ),
+                        Positioned(
+                          right: 40,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isReversed
+                                  ? Theme.of(context).colorScheme.secondary
+                                  : Colors.transparent,
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.swap_vert,
+                                  color: Colors.white),
+                              onPressed: () {
+                                setState(() {
+                                  isReversed = !isReversed;
+                                  newsData = newsData.reversed.toList();
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            isLoading
-                ? const SliverFillRemaining(
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                : SliverList(
-                    delegate: SliverChildListDelegate(
-                      generateNewsItems(),
+              isLoading
+                  ? const SliverFillRemaining(
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : SliverList(
+                      delegate: SliverChildListDelegate(
+                        generateNewsItems(),
+                      ),
                     ),
-                  ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -61,7 +61,7 @@ class _MyAppState extends State<MyApp> {
       secondary: Colors.orange[700]!,
       onSecondary: Colors.white,
       surface: Colors.orange[
-          50]!,
+          100]!,
       onSurface:
           Colors.black87,
       error: Colors.red,
