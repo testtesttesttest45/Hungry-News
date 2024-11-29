@@ -26,4 +26,4 @@ def get_news():
     return jsonify(results) 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)  # Bind to all network interfaces
+    app.run(host='0.0.0.0', port=5000, debug=False)  # Bind to all network interfaces

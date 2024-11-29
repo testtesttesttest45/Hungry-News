@@ -29,6 +29,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
   late DateTime currentDate;
   List<dynamic> newsData = [];
   bool isLoading = false;
+  String errorMessage = '';
 
   @override
   void initState() {
@@ -51,24 +52,25 @@ class MajorNewsPageState extends State<MajorNewsPage> {
   Future<void> fetchNews() async {
     setState(() {
       isLoading = true;
+      errorMessage = '';
     });
     try {
-      final response =
-          await http.get(Uri.parse('http://192.168.1.83:5000/news'));
+      final response = await http
+          .get(Uri.parse('https://hungrynews-backend.onrender.com/news'));
       if (response.statusCode == 200) {
         setState(() {
           newsData = jsonDecode(response.body)
-            ..sort((a, b) => parseNewsDate(b['datetime']).compareTo(
-                parseNewsDate(a['datetime'])));
+            ..sort((a, b) => parseNewsDate(b['datetime'])
+                .compareTo(parseNewsDate(a['datetime'])));
           isLoading = false;
         });
       } else {
         throw Exception('Failed to load news');
       }
     } catch (e) {
-      print('Caught error: $e');
       setState(() {
         isLoading = false;
+        errorMessage = e.toString(); // Store the error message
       });
     }
   }
@@ -84,14 +86,30 @@ class MajorNewsPageState extends State<MajorNewsPage> {
     if (isLoading) {
       return [const Center(child: CircularProgressIndicator())];
     }
+    if (errorMessage.isNotEmpty) {
+      return [
+        Center(child: Text(errorMessage))
+      ];
+    }
+
+    if (newsData.isEmpty) {
+      return [
+        const SizedBox(height: 100),
+        Center(
+          child: Text(
+            "No news yet! Stay tuned!",
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+        )
+      ];
+    }
     List<Widget> newsWidgets = [
       const SizedBox(height: 30),
     ];
 
     newsWidgets.addAll(newsData.map((news) {
       bool isRead = news['is_read'] == 1;
-      DateTime newsDateTime =
-          parseNewsDate(news['datetime']);
+      DateTime newsDateTime = parseNewsDate(news['datetime']);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -113,8 +131,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        DateFormat('dd MMM yyyy, HH:mm').format(
-                            newsDateTime),
+                        DateFormat('dd MMM yyyy, HH:mm').format(newsDateTime),
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
@@ -183,18 +200,15 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                         ],
                       ),
                       Positioned(
+                        key: ValueKey(
+                            currentDate),
                         right: 0,
                         child: IconButton(
                           icon: const Icon(Icons.refresh, color: Colors.white),
                           onPressed: () async {
-                            setState(() {
-                              isLoading = true;
-                            });
                             await fetchNews();
                             setState(() {
-                              currentDate = TimeHelper
-                                  .currentTime;
-                              isLoading = false;
+                              currentDate = DateTime.now();
                             });
                           },
                         ),
@@ -237,5 +251,5 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
-      false;
+      true;
 }
