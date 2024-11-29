@@ -17,6 +17,7 @@ def get_week_table_name(today=None):
     """
     # debugging custom date
     # today = today or datetime(2024, 10, 10)  # Hardcoded date for debugging
+    today = today or datetime.now()
     print(f"Debugging: Using date {today.strftime('%d %B %Y')}")
     
     # Find the start and end of the week
