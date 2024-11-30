@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '/utils/time_helper.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:html/parser.dart' as html;
 
 DateTime parseNewsDate(String dateString) {
   // example: Thu, 28 Nov 2024 11:19:09 GMT
@@ -56,8 +57,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
       errorMessage = '';
     });
     try {
-      final response = await http
-          .get(Uri.parse('https://hungrynews-backend.onrender.com/news'));
+      final response = await http.get(Uri.parse('https://hungrynews-backend.onrender.com/major-news'));
       if (response.statusCode == 200) {
         setState(() {
           newsData = jsonDecode(response.body)
@@ -126,40 +126,58 @@ class MajorNewsPageState extends State<MajorNewsPage> {
     newsWidgets.addAll(newsData.map((news) {
       bool isRead = news['is_read'] == 1;
       DateTime newsDateTime = parseNewsDate(news['datetime']);
+      String title = news['title'];
+      String url = news['url'];
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding:
-                const EdgeInsets.symmetric(vertical: 10.0, horizontal: 32.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        news['title'], // Display news title from backend
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyLarge
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        DateFormat('dd MMM yyyy, HH:mm').format(newsDateTime),
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
+          InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NewsDetailPage(
+                    title: title,
+                    url: url,
                   ),
                 ),
-                if (isRead)
-                  const CircleAvatar(
-                    radius: 12,
-                    backgroundColor: Colors.green,
-                    child: Icon(Icons.check, color: Colors.white, size: 16),
+              );
+            },
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(vertical: 10.0, horizontal: 32.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          DateFormat('dd MMM yyyy, HH:mm').format(newsDateTime),
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
                   ),
-              ],
+                  if (isRead)
+                    const CircleAvatar(
+                      radius: 12,
+                      backgroundColor: Colors.green,
+                      child: Icon(Icons.check, color: Colors.white, size: 16),
+                    ),
+                ],
+              ),
             ),
           ),
           Padding(
@@ -297,4 +315,94 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
       true;
+}
+
+class NewsDetailPage extends StatefulWidget {
+  final String title;
+  final String url;
+
+  const NewsDetailPage({
+    super.key,
+    required this.title,
+    required this.url,
+  });
+
+  @override
+  NewsDetailPageState createState() => NewsDetailPageState();
+}
+
+class NewsDetailPageState extends State<NewsDetailPage> {
+  late Future<String> contentFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    contentFuture =
+        fetchArticleContent(widget.url);
+  }
+
+  Future<String> fetchArticleContent(String url) async {
+    final proxyUrl = 'https://hungrynews-backend.onrender.com/proxy?url=$url'; // use proxy
+    try {
+      final response = await http.get(Uri.parse(proxyUrl));
+      if (response.statusCode == 200) {
+        var document = html.parse(response.body);
+        var paragraphs = document.getElementsByTagName('p');
+        String content = paragraphs.map((p) => p.text).join('\n\n');
+        return content.isNotEmpty ? content : "No content available.";
+      } else {
+        return "Failed to load content. Status code: ${response.statusCode}";
+      }
+    } catch (e) {
+      return "An error occurred while fetching content: $e";
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(160),
+        child: AppBar(
+          title: Padding(
+            padding: const EdgeInsets.only(top: 20.0),
+            child: Text(
+              widget.title,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyLarge
+                  ?.copyWith(color: Colors.white),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.secondary,
+          centerTitle: true,
+        ),
+      ),
+      body: FutureBuilder<String>(
+        future: contentFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text("Error: ${snapshot.error}"),
+            );
+          } else {
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SingleChildScrollView(
+                child: Text(
+                  snapshot.data ?? "No content available.",
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
 }

@@ -1,10 +1,11 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import pymysql
 import pymysql.cursors
 import os
 from flask_cors import CORS
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
+import requests  # To fetch external content
 
 app = Flask(__name__)
 load_dotenv()
@@ -15,8 +16,6 @@ def get_week_table_name(today=None):
     get table name for current week (monday to sunday)
     If today variable is not provided, use the current date.
     """
-    # debugging custom date
-    # today = today or datetime(2024, 10, 10)  # Hardcoded date for debugging
     today = today or datetime.now()
     print(f"Debugging: Using date {today.strftime('%d %B %Y')}")
     
@@ -26,7 +25,7 @@ def get_week_table_name(today=None):
     return f"{start_of_week.strftime('%d%m%y')}-{end_of_week.strftime('%d%m%y')}"
 
 
-@app.route('/news')
+@app.route('/major-news')
 def get_news():
     config = {
         'user': os.getenv('DB_USER'),
@@ -48,7 +47,7 @@ def get_news():
                 return jsonify({"error": "Please wait while I generate this week's database"}), 503
             
             # see current week's table
-            cursor.execute(f"SELECT title, url, datetime, is_read FROM `{table_name}` WHERE impact_level = 3")
+            cursor.execute(f"SELECT title, url, datetime, is_read, is_saved FROM `{table_name}` WHERE impact_level = 3")
             results = cursor.fetchall()
     except pymysql.MySQLError as e:
         return jsonify({"error": f"Database error: {str(e)}"}), 500
@@ -56,6 +55,26 @@ def get_news():
         conn.close()
 
     return jsonify(results)
+
+
+@app.route('/proxy')
+def proxy():
+    """
+    Fetch content from an external URL and return it to the frontend.
+    """
+    url = request.args.get('url')
+    if not url:
+        return jsonify({"error": "Missing URL parameter"}), 400
+
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Error fetching URL: {str(e)}"}), 500
+
+    # return as plain text
+    return response.text, 200
+
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))  # default to 5000
