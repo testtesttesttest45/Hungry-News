@@ -35,6 +35,8 @@ dependencies:
   timezone: ^0.10.0
   http: ^1.2.2
   html: ^0.15.5
+  html_unescape: ^2.0.0
+  url_launcher: ^6.3.1
 
 
   # The following adds the Cupertino Icons font to your application.

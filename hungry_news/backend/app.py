@@ -47,7 +47,7 @@ def get_news():
                 return jsonify({"error": "Please wait while I generate this week's database"}), 503
             
             # see current week's table
-            cursor.execute(f"SELECT title, url, datetime, is_read, is_saved FROM `{table_name}` WHERE impact_level = 3")
+            cursor.execute(f"SELECT title, url, datetime, is_read, is_saved, source FROM `{table_name}` WHERE impact_level = 3")
             results = cursor.fetchall()
     except pymysql.MySQLError as e:
         return jsonify({"error": f"Database error: {str(e)}"}), 500

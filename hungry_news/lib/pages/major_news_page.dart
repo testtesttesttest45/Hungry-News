@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import '/utils/time_helper.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:html/parser.dart' as html;
+import 'news_detail_page.dart';
 
 DateTime parseNewsDate(String dateString) {
   // example: Thu, 28 Nov 2024 11:19:09 GMT
@@ -57,7 +57,8 @@ class MajorNewsPageState extends State<MajorNewsPage> {
       errorMessage = '';
     });
     try {
-      final response = await http.get(Uri.parse('https://hungrynews-backend.onrender.com/major-news'));
+      final response = await http
+          .get(Uri.parse('https://hungrynews-backend.onrender.com/major-news'));
       if (response.statusCode == 200) {
         setState(() {
           newsData = jsonDecode(response.body)
@@ -128,6 +129,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
       DateTime newsDateTime = parseNewsDate(news['datetime']);
       String title = news['title'];
       String url = news['url'];
+      String source = news['source'];
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,6 +142,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                   builder: (context) => NewsDetailPage(
                     title: title,
                     url: url,
+                    source: source,
                   ),
                 ),
               );
@@ -158,9 +161,9 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                           title,
                           style: Theme.of(context)
                               .textTheme
-                              .bodyLarge
+                              .bodyMedium
                               ?.copyWith(fontWeight: FontWeight.bold),
-                          maxLines: 2,
+                          maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
@@ -220,7 +223,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 10), // HERE
                             Text(
                               'Major News',
                               style: TextStyle(
@@ -317,92 +320,3 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
       true;
 }
 
-class NewsDetailPage extends StatefulWidget {
-  final String title;
-  final String url;
-
-  const NewsDetailPage({
-    super.key,
-    required this.title,
-    required this.url,
-  });
-
-  @override
-  NewsDetailPageState createState() => NewsDetailPageState();
-}
-
-class NewsDetailPageState extends State<NewsDetailPage> {
-  late Future<String> contentFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    contentFuture =
-        fetchArticleContent(widget.url);
-  }
-
-  Future<String> fetchArticleContent(String url) async {
-    final proxyUrl = 'https://hungrynews-backend.onrender.com/proxy?url=$url'; // use proxy
-    try {
-      final response = await http.get(Uri.parse(proxyUrl));
-      if (response.statusCode == 200) {
-        var document = html.parse(response.body);
-        var paragraphs = document.getElementsByTagName('p');
-        String content = paragraphs.map((p) => p.text).join('\n\n');
-        return content.isNotEmpty ? content : "No content available.";
-      } else {
-        return "Failed to load content. Status code: ${response.statusCode}";
-      }
-    } catch (e) {
-      return "An error occurred while fetching content: $e";
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(160),
-        child: AppBar(
-          title: Padding(
-            padding: const EdgeInsets.only(top: 20.0),
-            child: Text(
-              widget.title,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyLarge
-                  ?.copyWith(color: Colors.white),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.secondary,
-          centerTitle: true,
-        ),
-      ),
-      body: FutureBuilder<String>(
-        future: contentFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Text("Error: ${snapshot.error}"),
-            );
-          } else {
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SingleChildScrollView(
-                child: Text(
-                  snapshot.data ?? "No content available.",
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ),
-            );
-          }
-        },
-      ),
-    );
-  }
-}
