@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as html;
 import 'package:html_unescape/html_unescape.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:flutter_custom_tabs/flutter_custom_tabs.dart';
 
 Future<Map<String, dynamic>> fetchArticleContent(String url) async {
   final proxyUrl = 'https://hungrynews-backend.onrender.com/proxy?url=$url';
@@ -96,12 +96,18 @@ class NewsDetailPage extends StatefulWidget {
   final String title;
   final String url;
   final String source;
+  final bool isSaved;
+  final int newsId;
+  final bool isRead;
 
   const NewsDetailPage({
     super.key,
     required this.title,
     required this.url,
     required this.source,
+    required this.isSaved,
+    required this.newsId,
+    required this.isRead,
   });
 
   @override
@@ -115,7 +121,13 @@ class NewsDetailPageState extends State<NewsDetailPage> {
       flutterTts; // late means it will be initialized later. we don't need to initialize it here because it's not a constant value
   int currentPage = 0;
   bool isReading = false;
+  bool isSummarized = false;
+  bool isSaved = false;
   int? activeParagraphIndex;
+  bool isRead = false;
+
+  String originalContent = ""; // Original content
+  String summarizedContent = ""; // Summarized content
 
   @override
   void initState() {
@@ -124,6 +136,8 @@ class NewsDetailPageState extends State<NewsDetailPage> {
     _pageController = PageController(initialPage: currentPage);
     flutterTts = FlutterTts();
 
+    isSaved = widget.isSaved;
+    isRead = widget.isRead;
 
     flutterTts.setErrorHandler((msg) {
       setState(() {
@@ -169,7 +183,7 @@ class NewsDetailPageState extends State<NewsDetailPage> {
     flutterTts.stop();
     setState(() {
       isReading = false;
-      activeParagraphIndex = null; // Reset 
+      activeParagraphIndex = null; // Reset
     });
   }
 
@@ -223,12 +237,67 @@ class NewsDetailPageState extends State<NewsDetailPage> {
     );
   }
 
+  Future<String> _summarizeContent(String content) async {
+    // Split content into sentences
+    List<String> sentences = content.split(RegExp(r'(?<=[.!?])\s+'));
+
+    List<Map<String, dynamic>> scoredSentences = sentences
+        .map((sentence) => {
+              "sentence": sentence,
+              "score":
+                  sentence.length 
+            })
+        .toList();
+
+    
+    scoredSentences.sort((a, b) => b['score'].compareTo(a['score']));
+
+    int summaryLength = (sentences.length / 3).ceil();
+    String summary = scoredSentences
+        .take(summaryLength)
+        .map((s) => s['sentence'] as String)
+        .join(' ');
+
+    return summary;
+  }
+
+  Future<void> _toggleBookmark() async {
+    final newSavedState = !isSaved;
+
+    setState(() {
+      isSaved = newSavedState;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse('https://hungrynews-backend.onrender.com/update-news-save-status'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'news_id': widget.newsId,
+          'is_saved': newSavedState ? 1 : 0, // Convert bool to int
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        // revert the UI state
+        setState(() {
+          isSaved = !newSavedState;
+        });
+      }
+    } catch (e) {
+      // revert the UI state
+      setState(() {
+        isSaved = !newSavedState;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onHorizontalDragUpdate: (details) {
         if (details.delta.dx > 20) {
-          Navigator.pop(context);
+          Navigator.pop(context, isRead);
         }
       },
       child: Scaffold(
@@ -273,9 +342,11 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                       child: Text("Error: ${snapshot.error}"),
                     );
                   } else {
-                    final content = snapshot.data?['content'] ?? "No content";
+                    originalContent = snapshot.data?['content'] ?? "No content";
                     final images = snapshot.data?['images'] ?? [];
-                    final paragraphs = content.split('\n\n');
+                    final paragraphs = isSummarized
+                        ? summarizedContent.split('\n\n')
+                        : originalContent.split('\n\n');
 
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 32.0),
@@ -345,10 +416,12 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                                     if (currentPage > 0)
                                       Positioned(
                                         left: -5,
-                                        top: 50,
+                                        top: 75,
                                         child: IconButton(
-                                          icon: const Icon(Icons.arrow_left,
-                                              color: Colors.black),
+                                          icon: Icon(Icons.arrow_left,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface),
                                           iconSize: 24,
                                           onPressed: () {
                                             if (currentPage > 0) {
@@ -364,10 +437,12 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                                     if (currentPage < images.length - 1)
                                       Positioned(
                                         right: -5,
-                                        top: 50,
+                                        top: 75,
                                         child: IconButton(
-                                          icon: const Icon(Icons.arrow_right,
-                                              color: Colors.black),
+                                          icon: Icon(Icons.arrow_right,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface),
                                           iconSize: 24,
                                           onPressed: () {
                                             if (currentPage <
@@ -385,37 +460,89 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                                 ),
                               ),
                             const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              onPressed: isReading
-                                  ? _stopReading
-                                  : () => _speak(content),
-                              icon: Icon(
-                                  isReading ? Icons.stop : Icons.volume_up),
-                              label: Text(
-                                  isReading ? "Stop reading" : "Read for me"),
+                            Row(
+                              children: [
+                                ElevatedButton.icon(
+                                  onPressed: isReading
+                                      ? _stopReading
+                                      : () => _speak(isSummarized
+                                          ? summarizedContent
+                                          : originalContent),
+                                  icon: Icon(
+                                      isReading ? Icons.stop : Icons.volume_up),
+                                  label: Text(isReading
+                                      ? "Stop reading"
+                                      : "Read for me"),
+                                ),
+                                const SizedBox(width: 10),
+                                SizedBox(
+                                  width: 130,
+                                  child: ElevatedButton(
+                                    onPressed: isReading
+                                        ? null
+                                        : () async {
+                                            if (isSummarized) {
+                                              setState(() {
+                                                isSummarized = false;
+                                              });
+                                            } else {
+                                              summarizedContent =
+                                                  await _summarizeContent(
+                                                      originalContent);
+                                              setState(() {
+                                                isSummarized = true;
+                                              });
+                                            }
+                                          },
+                                    child: Text(isSummarized
+                                        ? "Original"
+                                        : "Summarize"),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  iconSize: 32,
+                                  onPressed: _toggleBookmark,
+                                  icon: Icon(
+                                    isSaved
+                                        ? Icons.bookmark_added
+                                        : Icons.bookmark_add_outlined,
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 16),
-                            ListView.builder(
-                              physics: const NeverScrollableScrollPhysics(),
-                              shrinkWrap: true,
-                              itemCount: paragraphs.length,
-                              itemBuilder: (context, index) {
-                                final isActive = index == activeParagraphIndex;
-                                return AnimatedContainer(
-                                  duration: const Duration(milliseconds: 300),
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 8.0, horizontal: 8.0),
-                                  color: isActive
-                                      ? Colors.yellow.withOpacity(
-                                          0.4) // Highlight current paragraph
-                                      : Colors.transparent,
-                                  child: Text(
-                                    paragraphs[index],
-                                    style:
-                                        Theme.of(context).textTheme.bodyMedium,
-                                  ),
-                                );
-                              },
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0, horizontal: 8.0),
+                              child: SelectableText.rich(
+                                TextSpan(
+                                  children:
+                                      paragraphs.asMap().entries.map((entry) {
+                                    final index = entry.key;
+                                    final paragraph = entry.value;
+                                    final isActive =
+                                        index == activeParagraphIndex;
+
+                                    return TextSpan(
+                                      text:
+                                          '$paragraph\n\n',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            backgroundColor: isActive
+                                                ? Colors.yellow.withOpacity(
+                                                    0.4) // Highlight active paragraph
+                                                : Colors.transparent,
+                                          ),
+                                    );
+                                  }).toList(),
+                                ),
+                                showCursor: true,
+                                cursorColor: Colors.blue,
+                              ),
                             ),
                             const SizedBox(height: 16),
                             _buildCreditSection(widget.url, widget.source),
@@ -436,19 +563,73 @@ class NewsDetailPageState extends State<NewsDetailPage> {
   Widget _buildCreditSection(String url, String source) {
     String displaySource = source.replaceAll('_', ' ').toUpperCase();
 
-    Future<void> openBrowser(String url) async {
-      Uri uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        throw 'Could not launch $url';
+    void launchURL(BuildContext context, String url) async {
+      final theme = Theme.of(context);
+
+      try {
+        await launchUrl(
+          Uri.parse(url),
+          customTabsOptions: CustomTabsOptions(
+            colorSchemes: CustomTabsColorSchemes.defaults(
+              toolbarColor: theme.colorScheme.surface,
+            ),
+            shareState: CustomTabsShareState.on,
+            urlBarHidingEnabled: true,
+            showTitle: true,
+            closeButton: CustomTabsCloseButton(
+              icon: CustomTabsCloseButtonIcons.back,
+            ),
+          ),
+        );
+      } catch (e) {
+        if (!context.mounted) return;
+        debugPrint('Error opening custom tab: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Unable to open the browser.")),
+        );
+      }
+    }
+
+    Future<void> markAsRead() async {
+      try {
+        final response = await http.post(
+          Uri.parse('https://hungrynews-backend.onrender.com/update-news-read-status'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'news_id': widget.newsId, // Pass the news_id
+            'is_read': 1,
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          if (!mounted) return;
+          setState(() {
+            isRead = true;
+          });
+        } else {
+          debugPrint('Failed to mark as read: ${response.statusCode}');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text("Failed to update the read status.")),
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint('Error marking as read: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text("Error occurred while updating read status.")),
+          );
+        }
       }
     }
 
     return Padding(
-      padding: const EdgeInsets.only(top: 16.0),
+      padding: const EdgeInsets.only(top: 30.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Divider(
             color: Theme.of(context).dividerColor,
@@ -461,13 +642,26 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                 ),
           ),
           const SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: isRead ? null : markAsRead,
+            icon: Icon(
+              isRead ? Icons.check_circle : Icons.radio_button_unchecked,
+              color: isRead ? Colors.green : Theme.of(context).iconTheme.color,
+            ),
+            label: Text(
+              isRead ? "News read!" : "Finish reading",
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: isRead ? Colors.green : null,
+                  ),
+            ),
+          ),
           Text(
             "I want to credit $displaySource for providing this news.",
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 8),
           GestureDetector(
-            onTap: () => openBrowser(url),
+            onTap: () => launchURL(context, url),
             child: Text(
               "Read more here: $url",
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -476,6 +670,8 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                   ),
             ),
           ),
+          const SizedBox(height: 30),
+          
         ],
       ),
     );

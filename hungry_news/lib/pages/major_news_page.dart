@@ -57,8 +57,8 @@ class MajorNewsPageState extends State<MajorNewsPage> {
       errorMessage = '';
     });
     try {
-      final response = await http
-          .get(Uri.parse('https://hungrynews-backend.onrender.com/major-news'));
+      final response =
+          await http.get(Uri.parse('https://hungrynews-backend.onrender.com/major-news'));
       if (response.statusCode == 200) {
         setState(() {
           newsData = jsonDecode(response.body)
@@ -130,22 +130,37 @@ class MajorNewsPageState extends State<MajorNewsPage> {
       String title = news['title'];
       String url = news['url'];
       String source = news['source'];
+      bool isSaved = news['is_saved'] == 1;
+      int newsId = news['news_id'];
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           InkWell(
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              final updatedIsRead = await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => NewsDetailPage(
                     title: title,
                     url: url,
                     source: source,
+                    isSaved: isSaved,
+                    newsId: newsId,
+                    isRead: isRead,
                   ),
                 ),
               );
+
+              if (updatedIsRead != null && updatedIsRead == true) {
+                setState(() {
+                  final index =
+                      newsData.indexWhere((n) => n['news_id'] == newsId);
+                  if (index != -1) {
+                    newsData[index]['is_read'] = 1; // Update locally
+                  }
+                });
+              }
             },
             child: Container(
               padding:
@@ -319,4 +334,3 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
       true;
 }
-

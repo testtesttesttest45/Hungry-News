@@ -90,7 +90,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Text(
-                      'Inspired by Hungry Jacks Burgers',
+                      'Inspired by Hungry Jack\'s Burgers',
                       style:
                           // Theme.of(context).textTheme.bodyMedium,
                           // add theme bodyMedium and italics
