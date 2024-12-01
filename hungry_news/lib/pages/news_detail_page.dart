@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as html;
 import 'package:html_unescape/html_unescape.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 Future<Map<String, dynamic>> fetchArticleContent(String url) async {
   final proxyUrl = 'https://hungrynews-backend.onrender.com/proxy?url=$url';
@@ -110,20 +111,66 @@ class NewsDetailPage extends StatefulWidget {
 class NewsDetailPageState extends State<NewsDetailPage> {
   late Future<Map<String, dynamic>> contentFuture;
   late PageController _pageController;
+  late FlutterTts
+      flutterTts; // late means it will be initialized later. we don't need to initialize it here because it's not a constant value
   int currentPage = 0;
+  bool isReading = false;
+  int? activeParagraphIndex;
 
   @override
   void initState() {
     super.initState();
     contentFuture = fetchArticleContent(widget.url);
-    _pageController =
-        PageController(initialPage: currentPage); // Initialize controller
+    _pageController = PageController(initialPage: currentPage);
+    flutterTts = FlutterTts();
+
+
+    flutterTts.setErrorHandler((msg) {
+      setState(() {
+        isReading = false;
+        activeParagraphIndex = null; // Reset state on error
+      });
+    });
   }
 
   @override
   void dispose() {
-    _pageController.dispose(); // Dispose controller
+    _pageController.dispose();
+    flutterTts.stop();
     super.dispose();
+  }
+
+  Future<void> _speak(String text) async {
+    setState(() {
+      isReading = true;
+      activeParagraphIndex = null;
+    });
+
+    List<String> paragraphs = text.split('\n\n'); // Split text into paragraphs
+    flutterTts.awaitSpeakCompletion(true);
+
+    for (int i = 0; i < paragraphs.length; i++) {
+      if (!isReading) break; // if user interrupts, stop reading
+      setState(() {
+        activeParagraphIndex = i; // Highlight current paragraph
+      });
+      await flutterTts.speak(paragraphs[i]); // Speak the paragraph
+    }
+
+    if (isReading) {
+      setState(() {
+        isReading = false;
+        activeParagraphIndex = null; // reset highlighting after completion
+      });
+    }
+  }
+
+  void _stopReading() {
+    flutterTts.stop();
+    setState(() {
+      isReading = false;
+      activeParagraphIndex = null; // Reset 
+    });
   }
 
   void _showFullScreenImages(
@@ -149,8 +196,7 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                     child: Center(
                       child: Image.network(
                         imageUrl,
-                        fit: BoxFit
-                            .contain, // image scales proportionally
+                        fit: BoxFit.contain, // image scales proportionally
                       ),
                     ),
                   ),
@@ -229,6 +275,7 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                   } else {
                     final content = snapshot.data?['content'] ?? "No content";
                     final images = snapshot.data?['images'] ?? [];
+                    final paragraphs = content.split('\n\n');
 
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 32.0),
@@ -337,10 +384,40 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                                   ],
                                 ),
                               ),
-                            Text(
-                              content,
-                              style: Theme.of(context).textTheme.bodyMedium,
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              onPressed: isReading
+                                  ? _stopReading
+                                  : () => _speak(content),
+                              icon: Icon(
+                                  isReading ? Icons.stop : Icons.volume_up),
+                              label: Text(
+                                  isReading ? "Stop reading" : "Read for me"),
                             ),
+                            const SizedBox(height: 16),
+                            ListView.builder(
+                              physics: const NeverScrollableScrollPhysics(),
+                              shrinkWrap: true,
+                              itemCount: paragraphs.length,
+                              itemBuilder: (context, index) {
+                                final isActive = index == activeParagraphIndex;
+                                return AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 8.0, horizontal: 8.0),
+                                  color: isActive
+                                      ? Colors.yellow.withOpacity(
+                                          0.4) // Highlight current paragraph
+                                      : Colors.transparent,
+                                  child: Text(
+                                    paragraphs[index],
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 16),
                             _buildCreditSection(widget.url, widget.source),
                           ],
                         ),

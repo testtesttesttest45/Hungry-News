@@ -37,6 +37,7 @@ dependencies:
   html: ^0.15.5
   html_unescape: ^2.0.0
   url_launcher: ^6.3.1
+  flutter_tts: ^4.2.0
 
 
   # The following adds the Cupertino Icons font to your application.
