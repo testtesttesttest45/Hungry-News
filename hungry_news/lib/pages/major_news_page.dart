@@ -32,6 +32,8 @@ class MajorNewsPageState extends State<MajorNewsPage> {
   bool isLoading = false;
   String errorMessage = '';
   bool isReversed = false;
+  final GlobalKey<NewsDetailPageState> newsDetailPageKey =
+      GlobalKey<NewsDetailPageState>();
 
   @override
   void initState() {
@@ -57,8 +59,8 @@ class MajorNewsPageState extends State<MajorNewsPage> {
       errorMessage = '';
     });
     try {
-      final response =
-          await http.get(Uri.parse('https://hungrynews-backend.onrender.com/major-news'));
+      final response = await http
+          .get(Uri.parse('https://hungrynews-backend.onrender.com/major-news'));
       if (response.statusCode == 200) {
         setState(() {
           newsData = jsonDecode(response.body)
@@ -138,10 +140,11 @@ class MajorNewsPageState extends State<MajorNewsPage> {
         children: [
           InkWell(
             onTap: () async {
-              final updatedIsRead = await Navigator.push(
+              final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => NewsDetailPage(
+                    key: newsDetailPageKey,
                     title: title,
                     url: url,
                     source: source,
@@ -152,12 +155,15 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                 ),
               );
 
-              if (updatedIsRead != null && updatedIsRead == true) {
+              if (newsDetailPageKey.currentState != null) {
+                final updatedIsRead = newsDetailPageKey.currentState!.isRead;
+                final updatedIsSaved = newsDetailPageKey.currentState!.isSaved;
                 setState(() {
                   final index =
                       newsData.indexWhere((n) => n['news_id'] == newsId);
                   if (index != -1) {
-                    newsData[index]['is_read'] = 1; // Update locally
+                    newsData[index]['is_read'] = updatedIsRead ? 1 : 0;
+                    newsData[index]['is_saved'] = updatedIsSaved ? 1 : 0;
                   }
                 });
               }
@@ -220,7 +226,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
           onRefresh: () async {
             await fetchNews();
             setState(() {
-              currentDate = DateTime.now();
+              currentDate = getToday();
             });
           },
           child: CustomScrollView(
@@ -267,7 +273,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                             onPressed: () async {
                               await fetchNews();
                               setState(() {
-                                currentDate = DateTime.now();
+                                currentDate = getToday();
                               });
                             },
                           ),

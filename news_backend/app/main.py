@@ -20,8 +20,8 @@ def sanitize_text(text):
     """Decode HTML entities to text."""
     return html.unescape(text).strip() #strip will remove the leading and trailing spaces
 
-def is_similar(new_item, existing_items, threshold=80):
-    """similarity check between new item and existing items with 80% threshold"""
+def is_similar(new_item, existing_items, threshold=65):
+    """similarity check between new item and existing items with 65% threshold"""
     for existing_item in existing_items:
         if fuzz.token_sort_ratio(new_item, existing_item) > threshold:
             return True

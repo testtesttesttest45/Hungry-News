@@ -242,14 +242,9 @@ class NewsDetailPageState extends State<NewsDetailPage> {
     List<String> sentences = content.split(RegExp(r'(?<=[.!?])\s+'));
 
     List<Map<String, dynamic>> scoredSentences = sentences
-        .map((sentence) => {
-              "sentence": sentence,
-              "score":
-                  sentence.length 
-            })
+        .map((sentence) => {"sentence": sentence, "score": sentence.length})
         .toList();
 
-    
     scoredSentences.sort((a, b) => b['score'].compareTo(a['score']));
 
     int summaryLength = (sentences.length / 3).ceil();
@@ -270,7 +265,8 @@ class NewsDetailPageState extends State<NewsDetailPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('https://hungrynews-backend.onrender.com/update-news-save-status'),
+        Uri.parse(
+            'https://hungrynews-backend.onrender.com/update-news-save-status'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'news_id': widget.newsId,
@@ -296,8 +292,11 @@ class NewsDetailPageState extends State<NewsDetailPage> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onHorizontalDragUpdate: (details) {
-        if (details.delta.dx > 20) {
-          Navigator.pop(context, isRead);
+        if (details.delta.dx > 10) {
+          Navigator.pop(context, {
+            'is_saved': isSaved, // Return the updated isSaved state
+            'is_read': isRead, // Return the updated isRead state
+          });
         }
       },
       child: Scaffold(
@@ -526,8 +525,7 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                                         index == activeParagraphIndex;
 
                                     return TextSpan(
-                                      text:
-                                          '$paragraph\n\n',
+                                      text: '$paragraph\n\n',
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodyMedium
@@ -593,7 +591,8 @@ class NewsDetailPageState extends State<NewsDetailPage> {
     Future<void> markAsRead() async {
       try {
         final response = await http.post(
-          Uri.parse('https://hungrynews-backend.onrender.com/update-news-read-status'),
+          Uri.parse(
+              'https://hungrynews-backend.onrender.com/update-news-read-status'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'news_id': widget.newsId, // Pass the news_id
@@ -655,9 +654,15 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                   ),
             ),
           ),
-          Text(
-            "I want to credit $displaySource for providing this news.",
-            style: Theme.of(context).textTheme.bodyMedium,
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2.0),
+              child: Text(
+                "I want to credit $displaySource for providing this news.",
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
           ),
           const SizedBox(height: 8),
           GestureDetector(
@@ -671,7 +676,6 @@ class NewsDetailPageState extends State<NewsDetailPage> {
             ),
           ),
           const SizedBox(height: 30),
-          
         ],
       ),
     );
