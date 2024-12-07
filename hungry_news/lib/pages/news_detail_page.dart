@@ -279,14 +279,19 @@ class NewsDetailPageState extends State<NewsDetailPage> {
       activeParagraphIndex = null;
     });
 
-    List<String> paragraphs = splitParagraphs(text);
+    List<List<InlineSpan>> paragraphs = originalContent;
     flutterTts.awaitSpeakCompletion(true);
 
     flutterTts.setProgressHandler(
         (String currentText, int start, int end, String word) {
       if (!mounted) return;
+
       for (int i = 0; i < paragraphs.length; i++) {
-        if (paragraphs[i].contains(currentText.trim())) {
+        final String paragraphText = paragraphs[i]
+            .map((span) => (span as TextSpan).text ?? '')
+            .join(); // Combine spans into a single string
+
+        if (paragraphText.contains(currentText.trim())) {
           setState(() {
             activeParagraphIndex = i;
           });
@@ -297,9 +302,12 @@ class NewsDetailPageState extends State<NewsDetailPage> {
 
     for (int i = 0; i < paragraphs.length; i++) {
       if (!isReading) break;
-      if (!mounted) return; // Prevent updates if widget is disposed
+      if (!mounted) return;
 
-      await flutterTts.speak(paragraphs[i].trim());
+      final String paragraphText =
+          paragraphs[i].map((span) => (span as TextSpan).text ?? '').join();
+
+      await flutterTts.speak(paragraphText.trim());
     }
 
     if (!mounted) return;
