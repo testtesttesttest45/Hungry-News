@@ -140,21 +140,6 @@ class MajorNewsPageState extends State<MajorNewsPage> {
         children: [
           InkWell(
             onTap: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => NewsDetailPage(
-                    key: newsDetailPageKey,
-                    title: title,
-                    url: url,
-                    source: source,
-                    isSaved: isSaved,
-                    newsId: newsId,
-                    isRead: isRead,
-                  ),
-                ),
-              );
-
               if (newsDetailPageKey.currentState != null) {
                 final updatedIsRead = newsDetailPageKey.currentState!.isRead;
                 final updatedIsSaved = newsDetailPageKey.currentState!.isSaved;

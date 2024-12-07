@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -5,6 +6,7 @@ import 'package:html/parser.dart' as html;
 import 'package:html_unescape/html_unescape.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_custom_tabs/flutter_custom_tabs.dart';
+import 'package:html/dom.dart' as dom;
 
 Future<Map<String, dynamic>> fetchArticleContent(String url) async {
   final proxyUrl = 'https://hungrynews-backend.onrender.com/proxy?url=$url';
@@ -18,13 +20,19 @@ Future<Map<String, dynamic>> fetchArticleContent(String url) async {
       final document = html.parse(utf8Body);
 
       List<Map<String, String>> images = [];
-      List<String> paragraphs = [];
+      List<List<InlineSpan>> paragraphs = [];
+
+      void processParagraphs(String selector) {
+        document.querySelectorAll(selector).forEach((element) {
+          final spans = _extractTextAndLinks(element, unescape);
+          if (spans.isNotEmpty) {
+            paragraphs.add(spans);
+          }
+        });
+      }
 
       if (url.contains("bbc.com")) {
-        paragraphs = document
-            .querySelectorAll('div[data-component="text-block"] p')
-            .map((p) => unescape.convert(p.text.trim()))
-            .toList();
+        processParagraphs('div[data-component="text-block"] p');
 
         document
             .querySelectorAll('div[data-component="image-block"] img')
@@ -36,11 +44,43 @@ Future<Map<String, dynamic>> fetchArticleContent(String url) async {
           }
         });
       } else if (url.contains("channelnewsasia.com")) {
-        paragraphs = document
-            .querySelectorAll('div.text p')
-            .map((p) => unescape.convert(p.text.trim()))
-            .toList();
+        // <p> tags inside div.text
+        document.querySelectorAll('div.text p').forEach((p) {
+          if (p.text.trim().isNotEmpty) {
+            final spans = _extractTextAndLinks(p, unescape);
+            if (spans.isNotEmpty) {
+              paragraphs.add(spans);
+            }
+          }
+        });
 
+        // content inside div.text-long
+        document.querySelectorAll('div.text-long').forEach((div) {
+          final rawParagraphs =
+              div.innerHtml.split(RegExp(r'(<br\s*/?>\s*){2,}'));
+
+          for (var rawParagraph in rawParagraphs) {
+            final cleanedParagraph = rawParagraph.trim();
+            if (cleanedParagraph.isNotEmpty) {
+              final wrappedHtml = '<div>$cleanedParagraph</div>';
+              final element = dom.Element.html(wrappedHtml);
+
+              final spans = _extractTextAndLinks(element, unescape);
+              if (spans.isNotEmpty) {
+                paragraphs.add(spans);
+              }
+            }
+          }
+        });
+
+        // remove empty paragraphs at the end
+        while (paragraphs.isNotEmpty &&
+            paragraphs.last.every((span) =>
+                span is TextSpan && (span.text?.trim().isEmpty ?? true))) {
+          paragraphs.removeLast();
+        }
+
+        // <img> tags inside figures
         document.querySelectorAll('figure img').forEach((img) {
           final src = img.attributes['src'] ?? '';
           final alt = img.attributes['alt'] ?? 'No caption available';
@@ -49,10 +89,7 @@ Future<Map<String, dynamic>> fetchArticleContent(String url) async {
           }
         });
       } else {
-        paragraphs = document
-            .getElementsByTagName('p')
-            .map((p) => unescape.convert(p.text.trim()))
-            .toList();
+        processParagraphs('p');
 
         document.getElementsByTagName('img').forEach((img) {
           final src = img.attributes['src'] ?? '';
@@ -63,33 +100,98 @@ Future<Map<String, dynamic>> fetchArticleContent(String url) async {
         });
       }
 
-      String content = paragraphs.join('\n\n');
-      content = content
-          .replaceAll('Â', '')
-          .replaceAll(RegExp(r'â'), "'")
-          .replaceAll(RegExp(r'â'), "'")
-          .replaceAll(RegExp(r'â'), '"')
-          .replaceAll(RegExp(r'â'), '"')
-          .replaceAll(RegExp(r'[\u00A0\u202F]'), ' ')
-          .trim();
-
       return {
-        "content": content.isNotEmpty ? content : "No content available.",
-        "images": images, // Return images with captions
+        "content": paragraphs,
+        "images": images,
       };
     } else {
       return {
-        "content":
-            "Failed to load content. Status code: ${response.statusCode}",
+        "content": [
+          [
+            TextSpan(
+              text:
+                  "Failed to load content. Status code: ${response.statusCode}",
+              style: const TextStyle(color: Colors.red),
+            )
+          ]
+        ],
         "images": []
       };
     }
   } catch (e) {
     return {
-      "content": "An error occurred while fetching content: $e",
+      "content": [
+        [
+          TextSpan(
+            text: "An error occurred while fetching content: $e",
+            style: const TextStyle(color: Colors.red),
+          )
+        ]
+      ],
       "images": []
     };
   }
+}
+
+List<InlineSpan> _extractTextAndLinks(
+    dom.Element element, HtmlUnescape unescape) {
+  final spans = <InlineSpan>[];
+
+  for (var i = 0; i < element.nodes.length; i++) {
+    final node = element.nodes[i];
+
+    if (node is dom.Text) {
+      final cleanText = unescape
+          .convert(node.text.trim())
+          .replaceAll(RegExp(r'\s*\n\s*'), ' ')
+          .replaceAll(
+              RegExp(r'^"\s*|"\s*$'), '"') 
+          .replaceAll(
+              RegExp(r'(\s*<br>\s*)+'), '\n'); // convert <br> to newlines
+
+      if (cleanText.isNotEmpty) {
+        spans.add(TextSpan(text: cleanText));
+      }
+    } else if (node is dom.Element && node.localName == 'a') {
+      final link = node.attributes['href'] ?? '';
+      final linkText = unescape.convert(node.text.trim());
+
+      if (linkText.isNotEmpty) {
+        spans.add(
+          TextSpan(
+            text: linkText,
+            style: const TextStyle(
+              color: Colors.blue,
+              decoration: TextDecoration.underline,
+            ),
+            recognizer: TapGestureRecognizer()
+              ..onTap = () {
+                launchUrl(
+                  Uri.parse(link),
+                  customTabsOptions: const CustomTabsOptions(
+                    showTitle: true,
+                    shareState: CustomTabsShareState.on,
+                  ),
+                );
+              },
+          ),
+        );
+      }
+    }
+
+    if (i < element.nodes.length - 1) {
+      final nextNode = element.nodes[i + 1];
+      final isPunctuation = nextNode is dom.Text &&
+          nextNode.text.trim().startsWith(RegExp(r'[.,;?!]'));
+      final isBreak = nextNode is dom.Element && nextNode.localName == 'br';
+
+      if (!isPunctuation && !isBreak) {
+        spans.add(const TextSpan(text: ' '));
+      }
+    }
+  }
+
+  return spans;
 }
 
 class NewsDetailPage extends StatefulWidget {
@@ -126,8 +228,9 @@ class NewsDetailPageState extends State<NewsDetailPage> {
   int? activeParagraphIndex;
   bool isRead = false;
 
-  String originalContent = ""; // Original content
-  String summarizedContent = ""; // Summarized content
+  List<List<InlineSpan>> originalContent =
+      [];
+  List<List<InlineSpan>> summarizedContent = [];
 
   @override
   void initState() {
@@ -154,36 +257,56 @@ class NewsDetailPageState extends State<NewsDetailPage> {
     super.dispose();
   }
 
+  List<String> splitParagraphs(String text) {
+    return text
+        .split(RegExp(r'\n\n|(?<=[.!?])\s+(?=")|(?<=[.!?])\s+(?=\w)'))
+        .map((paragraph) => paragraph.trim())
+        .where((paragraph) => paragraph.isNotEmpty)
+        .toList();
+  }
+
   Future<void> _speak(String text) async {
     setState(() {
       isReading = true;
       activeParagraphIndex = null;
     });
 
-    List<String> paragraphs = text.split('\n\n'); // Split text into paragraphs
+    List<String> paragraphs = splitParagraphs(text);
     flutterTts.awaitSpeakCompletion(true);
 
+    flutterTts.setProgressHandler(
+        (String currentText, int start, int end, String word) {
+      if (!mounted) return;
+      for (int i = 0; i < paragraphs.length; i++) {
+        if (paragraphs[i].contains(currentText.trim())) {
+          setState(() {
+            activeParagraphIndex = i;
+          });
+          break;
+        }
+      }
+    });
+
     for (int i = 0; i < paragraphs.length; i++) {
-      if (!isReading) break; // if user interrupts, stop reading
-      setState(() {
-        activeParagraphIndex = i; // Highlight current paragraph
-      });
-      await flutterTts.speak(paragraphs[i]); // Speak the paragraph
+      if (!isReading) break;
+      if (!mounted) return; // Prevent updates if widget is disposed
+
+      await flutterTts.speak(paragraphs[i].trim());
     }
 
-    if (isReading) {
-      setState(() {
-        isReading = false;
-        activeParagraphIndex = null; // reset highlighting after completion
-      });
-    }
-  }
-
-  void _stopReading() {
-    flutterTts.stop();
+    if (!mounted) return;
     setState(() {
       isReading = false;
-      activeParagraphIndex = null; // Reset
+      activeParagraphIndex = null;
+    });
+  }
+
+  void _stopReading() async {
+    await flutterTts.stop();
+    if (!mounted) return;
+    setState(() {
+      isReading = false;
+      activeParagraphIndex = null;
     });
   }
 
@@ -237,23 +360,26 @@ class NewsDetailPageState extends State<NewsDetailPage> {
     );
   }
 
-  Future<String> _summarizeContent(String content) async {
-    // Split content into sentences
-    List<String> sentences = content.split(RegExp(r'(?<=[.!?])\s+'));
+  Future<List<List<InlineSpan>>> _summarizeContent(
+      List<List<InlineSpan>> content) async {
+    String plainText = convertSpansToPlainText(content);
+    List<String> sentences = plainText.split(RegExp(r'(?<=[.!?])\s+'));
 
     List<Map<String, dynamic>> scoredSentences = sentences
         .map((sentence) => {"sentence": sentence, "score": sentence.length})
         .toList();
 
     scoredSentences.sort((a, b) => b['score'].compareTo(a['score']));
-
     int summaryLength = (sentences.length / 3).ceil();
-    String summary = scoredSentences
+
+    List<String> summarySentences = scoredSentences
         .take(summaryLength)
         .map((s) => s['sentence'] as String)
-        .join(' ');
+        .toList();
 
-    return summary;
+    return summarySentences.map((sentence) {
+      return [TextSpan(text: sentence)];
+    }).toList();
   }
 
   Future<void> _toggleBookmark() async {
@@ -294,8 +420,8 @@ class NewsDetailPageState extends State<NewsDetailPage> {
       onHorizontalDragUpdate: (details) {
         if (details.delta.dx > 10) {
           Navigator.pop(context, {
-            'is_saved': isSaved, // Return the updated isSaved state
-            'is_read': isRead, // Return the updated isRead state
+            'is_saved': isSaved,
+            'is_read': isRead,
           });
         }
       },
@@ -341,11 +467,14 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                       child: Text("Error: ${snapshot.error}"),
                     );
                   } else {
-                    originalContent = snapshot.data?['content'] ?? "No content";
                     final images = snapshot.data?['images'] ?? [];
-                    final paragraphs = isSummarized
-                        ? summarizedContent.split('\n\n')
-                        : originalContent.split('\n\n');
+                    originalContent =
+                        snapshot.data?['content'] as List<List<InlineSpan>>;
+
+                    final paragraphs =
+                        isSummarized ? summarizedContent : originalContent;
+
+                    final bool hasContent = originalContent.isNotEmpty;
 
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 32.0),
@@ -355,7 +484,9 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                           children: [
                             if (images.isNotEmpty)
                               SizedBox(
-                                height: 250,
+                                width: 400,
+                                height:
+                                    275,
                                 child: Stack(
                                   clipBehavior: Clip.none,
                                   children: [
@@ -386,9 +517,14 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                                                   borderRadius:
                                                       BorderRadius.circular(
                                                           8.0),
-                                                  child: Image.network(
-                                                    imageUrl,
-                                                    fit: BoxFit.cover,
+                                                  child: SizedBox(
+                                                    height:
+                                                        180,
+                                                    child: Image.network(
+                                                      imageUrl,
+                                                      fit: BoxFit
+                                                          .contain,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
@@ -462,11 +598,19 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                             Row(
                               children: [
                                 ElevatedButton.icon(
-                                  onPressed: isReading
-                                      ? _stopReading
-                                      : () => _speak(isSummarized
-                                          ? summarizedContent
-                                          : originalContent),
+                                  onPressed: !hasContent
+                                      ? () async {
+                                          await flutterTts
+                                              .speak("No content available");
+                                        }
+                                      : isReading
+                                          ? _stopReading
+                                          : () => _speak(
+                                                convertSpansToPlainText(
+                                                    isSummarized
+                                                        ? summarizedContent
+                                                        : originalContent),
+                                              ),
                                   icon: Icon(
                                       isReading ? Icons.stop : Icons.volume_up),
                                   label: Text(isReading
@@ -477,7 +621,7 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                                 SizedBox(
                                   width: 130,
                                   child: ElevatedButton(
-                                    onPressed: isReading
+                                    onPressed: !hasContent
                                         ? null
                                         : () async {
                                             if (isSummarized) {
@@ -515,32 +659,31 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                               duration: const Duration(milliseconds: 300),
                               padding: const EdgeInsets.symmetric(
                                   vertical: 8.0, horizontal: 8.0),
-                              child: SelectableText.rich(
-                                TextSpan(
-                                  children:
-                                      paragraphs.asMap().entries.map((entry) {
-                                    final index = entry.key;
-                                    final paragraph = entry.value;
-                                    final isActive =
-                                        index == activeParagraphIndex;
-
-                                    return TextSpan(
-                                      text: '$paragraph\n\n',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(
-                                            backgroundColor: isActive
-                                                ? Colors.yellow.withOpacity(
-                                                    0.4) // Highlight active paragraph
-                                                : Colors.transparent,
-                                          ),
-                                    );
-                                  }).toList(),
-                                ),
-                                showCursor: true,
-                                cursorColor: Colors.blue,
-                              ),
+                              child: paragraphs.isNotEmpty
+                                  ? SelectableText.rich(
+                                      TextSpan(
+                                        children: paragraphs
+                                            .expand((spans) => [
+                                                  ...spans,
+                                                  const TextSpan(
+                                                      text:
+                                                          '\n\n'), // Add spacing between paragraphs
+                                                ])
+                                            .toList(),
+                                      ),
+                                      showCursor: true,
+                                      cursorColor: Colors.blue,
+                                      enableInteractiveSelection:
+                                          true, // Allow multi-paragraph selection
+                                    )
+                                  : Center(
+                                      child: Text(
+                                        "No content available",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium,
+                                      ),
+                                    ),
                             ),
                             const SizedBox(height: 16),
                             _buildCreditSection(widget.url, widget.source),
@@ -556,6 +699,26 @@ class NewsDetailPageState extends State<NewsDetailPage> {
         ),
       ),
     );
+  }
+
+  String convertSpansToPlainText(List<List<InlineSpan>> content) {
+    return content
+        .map((spans) => spans.map((span) {
+              if (span is TextSpan) {
+                return span.text?.trim() ?? '';
+              }
+              if (span is WidgetSpan) {
+                final widget = span.child;
+                if (widget is GestureDetector) {
+                  final textChild = widget.child as Text?;
+                  return textChild?.data?.trim() ?? '';
+                }
+              }
+              return '';
+            }).join()) // Combine InlineSpans within a paragraph
+        .join('\n\n') // Separate paragraphs by double newlines
+        .replaceAll(RegExp(r'\s*\n\s*'), ' ')
+        .replaceAll(RegExp(r'^\s*|\s*$'), ''); // Trim the whole string
   }
 
   Widget _buildCreditSection(String url, String source) {
