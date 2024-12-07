@@ -8,7 +8,8 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_custom_tabs/flutter_custom_tabs.dart';
 import 'package:html/dom.dart' as dom;
 
-Future<Map<String, dynamic>> fetchArticleContent(String url) async {
+Future<Map<String, dynamic>> fetchArticleContent(
+    String url, BuildContext context) async {
   final proxyUrl = 'https://hungrynews-backend.onrender.com/proxy?url=$url';
   final unescape = HtmlUnescape();
 
@@ -24,7 +25,7 @@ Future<Map<String, dynamic>> fetchArticleContent(String url) async {
 
       void processParagraphs(String selector) {
         document.querySelectorAll(selector).forEach((element) {
-          final spans = _extractTextAndLinks(element, unescape);
+          final spans = _extractTextAndLinks(element, unescape, context);
           if (spans.isNotEmpty) {
             paragraphs.add(spans);
           }
@@ -47,7 +48,7 @@ Future<Map<String, dynamic>> fetchArticleContent(String url) async {
         // <p> tags inside div.text
         document.querySelectorAll('div.text p').forEach((p) {
           if (p.text.trim().isNotEmpty) {
-            final spans = _extractTextAndLinks(p, unescape);
+            final spans = _extractTextAndLinks(p, unescape, context);
             if (spans.isNotEmpty) {
               paragraphs.add(spans);
             }
@@ -65,7 +66,7 @@ Future<Map<String, dynamic>> fetchArticleContent(String url) async {
               final wrappedHtml = '<div>$cleanedParagraph</div>';
               final element = dom.Element.html(wrappedHtml);
 
-              final spans = _extractTextAndLinks(element, unescape);
+              final spans = _extractTextAndLinks(element, unescape, context);
               if (spans.isNotEmpty) {
                 paragraphs.add(spans);
               }
@@ -134,7 +135,7 @@ Future<Map<String, dynamic>> fetchArticleContent(String url) async {
 }
 
 List<InlineSpan> _extractTextAndLinks(
-    dom.Element element, HtmlUnescape unescape) {
+    dom.Element element, HtmlUnescape unescape, BuildContext context) {
   final spans = <InlineSpan>[];
 
   for (var i = 0; i < element.nodes.length; i++) {
@@ -144,10 +145,9 @@ List<InlineSpan> _extractTextAndLinks(
       final cleanText = unescape
           .convert(node.text.trim())
           .replaceAll(RegExp(r'\s*\n\s*'), ' ')
+          .replaceAll(RegExp(r'^"\s*|"\s*$'), '"')
           .replaceAll(
-              RegExp(r'^"\s*|"\s*$'), '"') 
-          .replaceAll(
-              RegExp(r'(\s*<br>\s*)+'), '\n'); // convert <br> to newlines
+              RegExp(r'(\s*<br>\s*)+'), '\n'); // Convert <br> to newlines
 
       if (cleanText.isNotEmpty) {
         spans.add(TextSpan(text: cleanText));
@@ -166,11 +166,20 @@ List<InlineSpan> _extractTextAndLinks(
             ),
             recognizer: TapGestureRecognizer()
               ..onTap = () {
+                final theme = Theme.of(context);
+
                 launchUrl(
                   Uri.parse(link),
-                  customTabsOptions: const CustomTabsOptions(
-                    showTitle: true,
+                  customTabsOptions: CustomTabsOptions(
+                    colorSchemes: CustomTabsColorSchemes.defaults(
+                      toolbarColor: theme.colorScheme.surface,
+                    ),
                     shareState: CustomTabsShareState.on,
+                    urlBarHidingEnabled: true,
+                    showTitle: true,
+                    closeButton: CustomTabsCloseButton(
+                      icon: CustomTabsCloseButtonIcons.back,
+                    ),
                   ),
                 );
               },
@@ -228,14 +237,13 @@ class NewsDetailPageState extends State<NewsDetailPage> {
   int? activeParagraphIndex;
   bool isRead = false;
 
-  List<List<InlineSpan>> originalContent =
-      [];
+  List<List<InlineSpan>> originalContent = [];
   List<List<InlineSpan>> summarizedContent = [];
 
   @override
   void initState() {
     super.initState();
-    contentFuture = fetchArticleContent(widget.url);
+    contentFuture = fetchArticleContent(widget.url, context);
     _pageController = PageController(initialPage: currentPage);
     flutterTts = FlutterTts();
 
@@ -485,8 +493,7 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                             if (images.isNotEmpty)
                               SizedBox(
                                 width: 400,
-                                height:
-                                    275,
+                                height: 275,
                                 child: Stack(
                                   clipBehavior: Clip.none,
                                   children: [
@@ -518,12 +525,10 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                                                       BorderRadius.circular(
                                                           8.0),
                                                   child: SizedBox(
-                                                    height:
-                                                        180,
+                                                    height: 180,
                                                     child: Image.network(
                                                       imageUrl,
-                                                      fit: BoxFit
-                                                          .contain,
+                                                      fit: BoxFit.contain,
                                                     ),
                                                   ),
                                                 ),
@@ -663,13 +668,35 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                                   ? SelectableText.rich(
                                       TextSpan(
                                         children: paragraphs
-                                            .expand((spans) => [
-                                                  ...spans,
-                                                  const TextSpan(
-                                                      text:
-                                                          '\n\n'), // Add spacing between paragraphs
-                                                ])
-                                            .toList(),
+                                            .asMap()
+                                            .entries
+                                            .expand((entry) {
+                                          final int index =
+                                              entry.key; // Paragraph index
+                                          final List<InlineSpan> spans = entry
+                                              .value; // Spans for the paragraph
+                                          final bool isActive = index ==
+                                              activeParagraphIndex; // Check if active
+
+                                          // Apply background color only to active paragraphs
+                                          return [
+                                            TextSpan(
+                                              children: spans,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium
+                                                  ?.copyWith(
+                                                    backgroundColor: isActive
+                                                        ? Colors.yellow.withOpacity(
+                                                            0.4) // Highlight active paragraph
+                                                        : Colors.transparent,
+                                                  ),
+                                            ),
+                                            const TextSpan(
+                                                text:
+                                                    '\n\n'), // Add spacing between paragraphs
+                                          ];
+                                        }).toList(),
                                       ),
                                       showCursor: true,
                                       cursorColor: Colors.blue,
