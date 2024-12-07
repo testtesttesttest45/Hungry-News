@@ -45,50 +45,72 @@ Future<Map<String, dynamic>> fetchArticleContent(
           }
         });
       } else if (url.contains("channelnewsasia.com")) {
-        // <p> tags inside div.text
+        final seenParagraphs = <String>{};
+
+        // Handle paragraphs in div.text and split by <br> within <p>
         document.querySelectorAll('div.text p').forEach((p) {
-          if (p.text.trim().isNotEmpty) {
-            final spans = _extractTextAndLinks(p, unescape, context);
-            if (spans.isNotEmpty) {
-              paragraphs.add(spans);
-            }
-          }
-        });
+          final rawHtml = p.innerHtml;
+          final splitParagraphs =
+              rawHtml.split(RegExp(r'(<br\s*/?>\s*){2,}')); // Split on <br><br>
 
-        // content inside div.text-long
-        document.querySelectorAll('div.text-long').forEach((div) {
-          final rawParagraphs =
-              div.innerHtml.split(RegExp(r'(<br\s*/?>\s*){2,}'));
-
-          for (var rawParagraph in rawParagraphs) {
-            final cleanedParagraph = rawParagraph.trim();
-            if (cleanedParagraph.isNotEmpty) {
-              final wrappedHtml = '<div>$cleanedParagraph</div>';
+          for (var rawParagraph in splitParagraphs) {
+            final cleanedText =
+                dom.Element.html('<div>${rawParagraph.trim()}</div>')
+                    .text
+                    .trim();
+            if (cleanedText.isNotEmpty &&
+                !seenParagraphs.contains(cleanedText)) {
+              final wrappedHtml = '<div>${rawParagraph.trim()}</div>';
               final element = dom.Element.html(wrappedHtml);
 
               final spans = _extractTextAndLinks(element, unescape, context);
               if (spans.isNotEmpty) {
                 paragraphs.add(spans);
+                seenParagraphs.add(cleanedText); // Track seen content
               }
             }
           }
         });
 
-        // remove empty paragraphs at the end
-        while (paragraphs.isNotEmpty &&
-            paragraphs.last.every((span) =>
-                span is TextSpan && (span.text?.trim().isEmpty ?? true))) {
-          paragraphs.removeLast();
-        }
+        // Handle mixed content in div.text-long
+        document.querySelectorAll('div.text-long').forEach((div) {
+          final rawContent = div.innerHtml.split(RegExp(r'(<br\s*/?>\s*){2,}'));
+          for (var rawParagraph in rawContent) {
+            final cleanedText =
+                dom.Element.html('<div>${rawParagraph.trim()}</div>')
+                    .text
+                    .trim();
+            if (cleanedText.isNotEmpty &&
+                !seenParagraphs.contains(cleanedText)) {
+              final wrappedHtml = '<div>${rawParagraph.trim()}</div>';
+              final element = dom.Element.html(wrappedHtml);
 
-        // <img> tags inside figures
-        document.querySelectorAll('figure img').forEach((img) {
+              final spans = _extractTextAndLinks(element, unescape, context);
+              if (spans.isNotEmpty) {
+                paragraphs.add(spans);
+                seenParagraphs.add(cleanedText); // Track seen content
+              }
+            }
+          }
+        });
+
+        // Extract images
+        document.querySelectorAll('figure img, div.text img').forEach((img) {
           final src = img.attributes['src'] ?? '';
           final alt = img.attributes['alt'] ?? 'No caption available';
           if (src.isNotEmpty && src.startsWith('http')) {
             images.add({'src': src, 'alt': unescape.convert(alt)});
           }
         });
+
+        // Final cleanup: remove unnecessary trailing whitespace between paragraphs
+        paragraphs = paragraphs.where((spanList) {
+          final combinedText = spanList
+              .map((span) => (span as TextSpan).text ?? '')
+              .join(' ')
+              .trim();
+          return combinedText.isNotEmpty;
+        }).toList();
       } else {
         processParagraphs('p');
 
@@ -279,7 +301,8 @@ class NewsDetailPageState extends State<NewsDetailPage> {
       activeParagraphIndex = null;
     });
 
-    List<List<InlineSpan>> paragraphs = originalContent;
+    // Choose summarized or original content dynamically
+    final paragraphs = isSummarized ? summarizedContent : originalContent;
     flutterTts.awaitSpeakCompletion(true);
 
     flutterTts.setProgressHandler(
@@ -386,7 +409,7 @@ class NewsDetailPageState extends State<NewsDetailPage> {
         .toList();
 
     scoredSentences.sort((a, b) => b['score'].compareTo(a['score']));
-    int summaryLength = (sentences.length / 3).ceil();
+    int summaryLength = (sentences.length / 5).ceil();
 
     List<String> summarySentences = scoredSentences
         .take(summaryLength)
@@ -634,7 +657,7 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                                 SizedBox(
                                   width: 130,
                                   child: ElevatedButton(
-                                    onPressed: !hasContent
+                                    onPressed: !hasContent || isReading
                                         ? null
                                         : () async {
                                             if (isSummarized) {
