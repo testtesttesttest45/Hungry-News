@@ -46,7 +46,7 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text("Reset App"),
-          content: const Text("Are you sure you want to reset the app?"),
+          content: const Text("Confirm to reset to default?\n\nSaved news and news marked as read will be cleared."),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -150,7 +150,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               .bodyMedium!
                               .copyWith(fontStyle: FontStyle.italic),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 30),
                         Text(
                           'Feast on news that matters',
                           style:

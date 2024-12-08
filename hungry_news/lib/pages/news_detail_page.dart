@@ -233,6 +233,7 @@ class NewsDetailPage extends StatefulWidget {
   final bool isSaved;
   final int newsId;
   final bool isRead;
+  final DateTime originalDatetime;
 
   const NewsDetailPage({
     super.key,
@@ -242,6 +243,7 @@ class NewsDetailPage extends StatefulWidget {
     required this.isSaved,
     required this.newsId,
     required this.isRead,
+    required this.originalDatetime,
   });
 
   @override
@@ -429,8 +431,21 @@ class NewsDetailPageState extends State<NewsDetailPage> {
       isSaved = newSavedState;
     });
 
-    // Store the updated state in persistent storage
-    await NewsStateManager.setIsSaved(widget.newsId, newSavedState);
+    final newsData = {
+      'news_id': widget.newsId,
+      'title': widget.title,
+      'url': widget.url,
+      'source': widget.source,
+      'is_read': isRead,
+    };
+
+    // update saved state
+    await NewsStateManager.setIsSaved(
+      widget.newsId,
+      newSavedState,
+      newsData: newSavedState ? newsData : null,
+      originalDatetime: widget.originalDatetime,
+    );
   }
 
   @override
@@ -804,7 +819,7 @@ class NewsDetailPageState extends State<NewsDetailPage> {
         isRead = true;
       });
 
-      // Store the updated state in persistent storage
+      // here we update the read state globally
       await NewsStateManager.setIsRead(widget.newsId, true);
     }
 

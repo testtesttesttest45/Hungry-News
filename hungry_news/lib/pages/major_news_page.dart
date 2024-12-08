@@ -40,11 +40,43 @@ class MajorNewsPageState extends State<MajorNewsPage> {
     super.initState();
     currentDate = getToday();
     fetchNews();
+    NewsStateManager.allSavedStatesNotifier.addListener(_onSavedStateUpdated);
+    NewsStateManager.allReadStatesNotifier.addListener(_onReadStateUpdated);
   }
 
   Future<void> refreshPage() async {
     await fetchNews();
     setState(() {}); // Rebuild the page
+  }
+
+  @override
+  void dispose() {
+    NewsStateManager.allSavedStatesNotifier
+        .removeListener(_onSavedStateUpdated);
+    NewsStateManager.allReadStatesNotifier.removeListener(_onReadStateUpdated);
+    super.dispose();
+  }
+
+  void _onSavedStateUpdated() {
+    setState(() {
+      final savedStates = NewsStateManager.allSavedStatesNotifier.value;
+      for (var news in newsData) {
+        if (savedStates.containsKey(news['news_id'])) {
+          news['is_saved'] = savedStates[news['news_id']];
+        }
+      }
+    });
+  }
+
+  void _onReadStateUpdated() {
+    setState(() {
+      final readStates = NewsStateManager.allReadStatesNotifier.value;
+      for (var news in newsData) {
+        if (readStates.containsKey(news['news_id'])) {
+          news['is_read'] = readStates[news['news_id']];
+        }
+      }
+    });
   }
 
   DateTime getToday() {
@@ -148,6 +180,9 @@ class MajorNewsPageState extends State<MajorNewsPage> {
       String source = news['source'];
       bool isSaved = news['is_saved'] == true;
       int newsId = news['news_id'];
+      final isReadGlobal =
+          NewsStateManager.allReadStatesNotifier.value[news['news_id']] ??
+              false;
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,7 +199,8 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                     source: source,
                     isSaved: isSaved,
                     newsId: newsId,
-                    isRead: isRead,
+                    isRead: isReadGlobal,
+                    originalDatetime: newsDateTime,
                   ),
                 ),
               );

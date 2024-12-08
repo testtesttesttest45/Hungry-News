@@ -60,18 +60,15 @@ class _MyAppState extends State<MyApp> {
       onPrimary: Colors.white,
       secondary: Colors.orange[700]!,
       onSecondary: Colors.white,
-      surface: Colors.orange[
-          100]!,
-      onSurface:
-          Colors.black87,
+      surface: Colors.orange[100]!,
+      onSurface: Colors.black87,
       error: Colors.red,
       onError: Colors.white,
       tertiary: Colors.orange[100]!,
     ),
     textTheme: const TextTheme(
       bodyLarge: TextStyle(color: Colors.black, fontSize: 18),
-      bodyMedium:
-          TextStyle(color: Colors.black, fontSize: 16),
+      bodyMedium: TextStyle(color: Colors.black, fontSize: 16),
     ),
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.red[800],
@@ -142,13 +139,14 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 2; //  Major News page by default
   final GlobalKey<MajorNewsPageState> _majorNewsPageKey = GlobalKey();
+  final GlobalKey<SavedNewsPageState> _savedNewsPageKey = GlobalKey();
 
   List<Widget> _pages(BuildContext context) => [
         const PreferenceNewsPage(),
         // PastNewsPage(testDate: DateTime(2024, 11, 10)),
         const PastNewsPage(),
         MajorNewsPage(key: _majorNewsPageKey),
-        const SavedNewsPage(),
+        SavedNewsPage(key: _savedNewsPageKey),
         const SearchNewsPage(),
         SettingsPage(
           onThemeChanged: widget.onThemeChanged, //  callback to SettingsPage
@@ -163,9 +161,12 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _resetAppCallback() {
-    // Notify Major News Page to refresh
     if (_majorNewsPageKey.currentState != null) {
       _majorNewsPageKey.currentState!.refreshPage();
+    }
+
+    if (_savedNewsPageKey.currentState != null) {
+      _savedNewsPageKey.currentState!.resetSavedNews();
     }
   }
 
