@@ -7,6 +7,7 @@ import 'package:html_unescape/html_unescape.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_custom_tabs/flutter_custom_tabs.dart';
 import 'package:html/dom.dart' as dom;
+import '../utils/utility.dart';
 
 Future<Map<String, dynamic>> fetchArticleContent(
     String url, BuildContext context) async {
@@ -428,29 +429,8 @@ class NewsDetailPageState extends State<NewsDetailPage> {
       isSaved = newSavedState;
     });
 
-    try {
-      final response = await http.post(
-        Uri.parse(
-            'https://hungrynews-backend.onrender.com/update-news-save-status'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'news_id': widget.newsId,
-          'is_saved': newSavedState ? 1 : 0, // Convert bool to int
-        }),
-      );
-
-      if (response.statusCode != 200) {
-        // revert the UI state
-        setState(() {
-          isSaved = !newSavedState;
-        });
-      }
-    } catch (e) {
-      // revert the UI state
-      setState(() {
-        isSaved = !newSavedState;
-      });
-    }
+    // Store the updated state in persistent storage
+    await NewsStateManager.setIsSaved(widget.newsId, newSavedState);
   }
 
   @override
@@ -649,9 +629,16 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                                               ),
                                   icon: Icon(
                                       isReading ? Icons.stop : Icons.volume_up),
-                                  label: Text(isReading
-                                      ? "Stop reading"
-                                      : "Read for me"),
+                                  label: SizedBox(
+                                    width: 80, // Fixed width
+                                    child: Text(
+                                      isReading
+                                          ? "Stop reading"
+                                          : "Read for me",
+                                      textAlign: TextAlign.center,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
                                 ),
                                 const SizedBox(width: 10),
                                 SizedBox(
@@ -678,9 +665,9 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                                         : "Summarize"),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 5),
                                 IconButton(
-                                  iconSize: 32,
+                                  iconSize: 28,
                                   onPressed: _toggleBookmark,
                                   icon: Icon(
                                     isSaved
@@ -763,6 +750,7 @@ class NewsDetailPageState extends State<NewsDetailPage> {
     return content
         .map((spans) => spans.map((span) {
               if (span is TextSpan) {
+                // Preserve the text with proper spacing
                 return span.text?.trim() ?? '';
               }
               if (span is WidgetSpan) {
@@ -773,10 +761,10 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                 }
               }
               return '';
-            }).join()) // Combine InlineSpans within a paragraph
+            }).join(' ')) // Add a space between InlineSpans within a paragraph
         .join('\n\n') // Separate paragraphs by double newlines
-        .replaceAll(RegExp(r'\s*\n\s*'), ' ')
-        .replaceAll(RegExp(r'^\s*|\s*$'), ''); // Trim the whole string
+        .replaceAll(RegExp(r'\s+'), ' ') // Normalize extra spaces
+        .trim(); // Trim the whole string
   }
 
   Widget _buildCreditSection(String url, String source) {
@@ -810,40 +798,14 @@ class NewsDetailPageState extends State<NewsDetailPage> {
     }
 
     Future<void> markAsRead() async {
-      try {
-        final response = await http.post(
-          Uri.parse(
-              'https://hungrynews-backend.onrender.com/update-news-read-status'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'news_id': widget.newsId, // Pass the news_id
-            'is_read': 1,
-          }),
-        );
+      if (isRead) return;
 
-        if (response.statusCode == 200) {
-          if (!mounted) return;
-          setState(() {
-            isRead = true;
-          });
-        } else {
-          debugPrint('Failed to mark as read: ${response.statusCode}');
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text("Failed to update the read status.")),
-            );
-          }
-        }
-      } catch (e) {
-        debugPrint('Error marking as read: $e');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text("Error occurred while updating read status.")),
-          );
-        }
-      }
+      setState(() {
+        isRead = true;
+      });
+
+      // Store the updated state in persistent storage
+      await NewsStateManager.setIsRead(widget.newsId, true);
     }
 
     return Padding(

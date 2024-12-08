@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '/utils/time_helper.dart';
+import '../utils/utility.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'news_detail_page.dart';
@@ -62,8 +62,17 @@ class MajorNewsPageState extends State<MajorNewsPage> {
       final response = await http
           .get(Uri.parse('https://hungrynews-backend.onrender.com/major-news'));
       if (response.statusCode == 200) {
+        List<dynamic> fetchedData = jsonDecode(response.body);
+
+        // Overwrite is_read and is_saved from persistent storage
+        for (var news in fetchedData) {
+          int newsId = news['news_id'];
+          news['is_read'] = await NewsStateManager.getIsRead(newsId) ?? false;
+          news['is_saved'] = await NewsStateManager.getIsSaved(newsId) ?? false;
+        }
+
         setState(() {
-          newsData = jsonDecode(response.body)
+          newsData = fetchedData
             ..sort((a, b) {
               int comparison = parseNewsDate(b['datetime'])
                   .compareTo(parseNewsDate(a['datetime']));
@@ -127,12 +136,12 @@ class MajorNewsPageState extends State<MajorNewsPage> {
     ];
 
     newsWidgets.addAll(newsData.map((news) {
-      bool isRead = news['is_read'] == 1;
+      bool isRead = news['is_read'] == true; // persistent storage value
       DateTime newsDateTime = parseNewsDate(news['datetime']);
       String title = news['title'];
       String url = news['url'];
       String source = news['source'];
-      bool isSaved = news['is_saved'] == 1;
+      bool isSaved = news['is_saved'] == true;
       int newsId = news['news_id'];
 
       return Column(
@@ -162,8 +171,8 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                   final index =
                       newsData.indexWhere((n) => n['news_id'] == newsId);
                   if (index != -1) {
-                    newsData[index]['is_read'] = updatedIsRead ? 1 : 0;
-                    newsData[index]['is_saved'] = updatedIsSaved ? 1 : 0;
+                    newsData[index]['is_read'] = updatedIsRead;
+                    newsData[index]['is_saved'] = updatedIsSaved;
                   }
                 });
               }
