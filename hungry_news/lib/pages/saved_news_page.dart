@@ -196,6 +196,7 @@ class SavedNewsPageState extends State<SavedNewsPage> {
         child: RefreshIndicator(
           onRefresh: () async {
             await NewsStateManager.initializeSavedNews(); // Refresh saved news
+            _sortSavedNews();
           },
           child: CustomScrollView(
             slivers: [
