@@ -42,6 +42,11 @@ class MajorNewsPageState extends State<MajorNewsPage> {
     fetchNews();
   }
 
+  Future<void> refreshPage() async {
+    await fetchNews();
+    setState(() {}); // Rebuild the page
+  }
+
   DateTime getToday() {
     if (widget.testDate != null) {
       return widget.testDate!;

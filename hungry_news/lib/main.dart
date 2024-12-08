@@ -141,16 +141,18 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 2; //  Major News page by default
+  final GlobalKey<MajorNewsPageState> _majorNewsPageKey = GlobalKey();
 
   List<Widget> _pages(BuildContext context) => [
         const PreferenceNewsPage(),
         // PastNewsPage(testDate: DateTime(2024, 11, 10)),
         const PastNewsPage(),
-        const MajorNewsPage(),
+        MajorNewsPage(key: _majorNewsPageKey),
         const SavedNewsPage(),
         const SearchNewsPage(),
         SettingsPage(
           onThemeChanged: widget.onThemeChanged, //  callback to SettingsPage
+          onResetApp: _resetAppCallback, // Pass reset callback
         ),
       ];
 
@@ -158,6 +160,13 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  void _resetAppCallback() {
+    // Notify Major News Page to refresh
+    if (_majorNewsPageKey.currentState != null) {
+      _majorNewsPageKey.currentState!.refreshPage();
+    }
   }
 
   @override
