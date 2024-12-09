@@ -140,13 +140,15 @@ class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 2; //  Major News page by default
   final GlobalKey<MajorNewsPageState> _majorNewsPageKey = GlobalKey();
   final GlobalKey<SavedNewsPageState> _savedNewsPageKey = GlobalKey();
+  final GlobalKey<PastNewsPageState> _pastNewsPageKey = GlobalKey();
 
   List<Widget> _pages(BuildContext context) => [
         const PreferenceNewsPage(),
         // PastNewsPage(testDate: DateTime(2024, 11, 10)),
-        const PastNewsPage(),
+        PastNewsPage(key: _pastNewsPageKey),
         MajorNewsPage(key: _majorNewsPageKey),
         SavedNewsPage(key: _savedNewsPageKey),
+        SavedNewsPage(key: _pastNewsPageKey),
         const SearchNewsPage(),
         SettingsPage(
           onThemeChanged: widget.onThemeChanged, //  callback to SettingsPage

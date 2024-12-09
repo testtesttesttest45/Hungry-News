@@ -60,6 +60,38 @@ def get_news():
 
     return jsonify(results)
 
+@app.route('/past-news')
+def get_past_news():
+    config = {
+        'user': os.getenv('DB_USER'),
+        'password': os.getenv('DB_PASSWORD'),
+        'host': os.getenv('DB_HOST'),
+        'database': os.getenv('DB_NAME'),
+        'cursorclass': pymysql.cursors.DictCursor
+    }
+    
+    table_name = request.args.get('table_name')
+    if not table_name:
+        return jsonify({"error": "Missing table name"}), 400
+    
+    conn = pymysql.connect(**config)
+    try:
+        with conn.cursor() as cursor:
+            # check if the table exists
+            cursor.execute(f"SHOW TABLES LIKE '{table_name}';")
+            if not cursor.fetchone():
+                return jsonify({"error": "Table does not exist"}), 404
+            
+            # see current week's table
+            cursor.execute(f"SELECT news_id, title, url, datetime, source FROM `{table_name}` where impact_level = 3")
+            results = cursor.fetchall()
+    except pymysql.MySQLError as e:
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
+    finally:
+        conn.close()
+
+    return jsonify(results)
+
 
 @app.route('/proxy')
 def proxy():

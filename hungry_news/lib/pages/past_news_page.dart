@@ -1,27 +1,69 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'news_detail_page.dart';
+import '../utils/utility.dart';
 
 class PastNewsPage extends StatefulWidget {
-  final DateTime? testDate; // debug param
+  final DateTime? testDate;
 
   const PastNewsPage({super.key, this.testDate});
 
   @override
-  State<PastNewsPage> createState() => _PastNewsPageState();
+  PastNewsPageState createState() => PastNewsPageState();
 }
 
-class _PastNewsPageState extends State<PastNewsPage> {
+class PastNewsPageState extends State<PastNewsPage> {
   late DateTime currentDate;
   late DateTime referenceDate;
+  List<dynamic> newsData = [];
+  bool isLoading = false;
+  bool isReversed = false;
+  String errorMessage = '';
+  final GlobalKey<NewsDetailPageState> newsDetailPageKey =
+      GlobalKey<NewsDetailPageState>();
 
   @override
   void initState() {
     super.initState();
-    // point referenceDate to the start of the current week
     referenceDate =
         DateTime.now().subtract(Duration(days: DateTime.now().weekday - 1));
-    // point currentDate to the start of the previous week
-    currentDate = referenceDate.subtract(const Duration(days: 7));
+    currentDate =
+        widget.testDate ?? referenceDate.subtract(const Duration(days: 7));
+    fetchNews();
+    NewsStateManager.allSavedStatesNotifier.addListener(_onSavedStateUpdated);
+    NewsStateManager.allReadStatesNotifier.addListener(_onReadStateUpdated);
+  }
+
+  @override
+  void dispose() {
+    NewsStateManager.allSavedStatesNotifier
+        .removeListener(_onSavedStateUpdated);
+    NewsStateManager.allReadStatesNotifier.removeListener(_onReadStateUpdated);
+    super.dispose();
+  }
+
+  void _onSavedStateUpdated() {
+    setState(() {
+      final savedStates = NewsStateManager.allSavedStatesNotifier.value;
+      for (var news in newsData) {
+        if (savedStates.containsKey(news['news_id'])) {
+          news['is_saved'] = savedStates[news['news_id']];
+        }
+      }
+    });
+  }
+
+  void _onReadStateUpdated() {
+    setState(() {
+      final readStates = NewsStateManager.allReadStatesNotifier.value;
+      for (var news in newsData) {
+        if (readStates.containsKey(news['news_id'])) {
+          news['is_read'] = readStates[news['news_id']];
+        }
+      }
+    });
   }
 
   String getFormattedDate() {
@@ -30,68 +72,194 @@ class _PastNewsPageState extends State<PastNewsPage> {
     return 'News from: ${DateFormat('dd MMM yyyy').format(weekStart)} - ${DateFormat('dd MMM yyyy').format(weekEnd)}';
   }
 
-  List<Widget> generatePastNewsItems() {
-    DateTime today = DateTime.now();
-    List<Widget> savedNewsItems = [
+  Future<void> fetchNews() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = '';
+    });
+
+    String tableName = getTableNameForWeek(currentDate);
+    try {
+      final response = await http.get(Uri.parse(
+          'https://hungrynews-backend.onrender.com/past-news?table_name=$tableName'));
+
+      if (response.statusCode == 200) {
+        List<dynamic> fetchedData = jsonDecode(response.body);
+
+        for (var news in fetchedData) {
+          int newsId = news['news_id'];
+          news['is_read'] = await NewsStateManager.getIsRead(newsId) ?? false;
+          news['is_saved'] = await NewsStateManager.getIsSaved(newsId) ?? false;
+        }
+
+        setState(() {
+          newsData = fetchedData
+            ..sort((a, b) {
+              int comparison = parseNewsDate(b['datetime'])
+                  .compareTo(parseNewsDate(a['datetime']));
+              // return comparison;
+              return isReversed ? -comparison : comparison;
+            });
+          isLoading = false;
+        });
+      } else if (response.statusCode == 404) {
+        setState(() {
+          errorMessage = "No news available for the selected week.";
+          isLoading = false;
+        });
+      } else {
+        throw Exception("Failed to fetch news");
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+        isLoading = false;
+      });
+    }
+  }
+
+  String getTableNameForWeek(DateTime date) {
+    String weekStart = DateFormat('ddMMyy').format(date);
+    String weekEnd =
+        DateFormat('ddMMyy').format(date.add(const Duration(days: 6)));
+    return '$weekStart-$weekEnd';
+  }
+
+  DateTime parseNewsDate(String dateString) {
+    try {
+      DateFormat format = DateFormat('EEE, dd MMM yyyy HH:mm:ss \'GMT\'');
+      return format.parse(dateString, true).toUtc();
+    } catch (e) {
+      return DateTime.now();
+    }
+  }
+
+  List<Widget> generateNewsItems() {
+    if (isLoading) {
+      return [const Center(child: CircularProgressIndicator())];
+    }
+    if (errorMessage.isNotEmpty) {
+      return [
+        const SizedBox(height: 100),
+        Center(
+          child: Text(
+            errorMessage,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        )
+      ];
+    }
+
+    if (newsData.isEmpty) {
+      return [
+        const SizedBox(height: 100),
+        Center(
+          child: Text(
+            "No news yet! Stay tuned!",
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+        )
+      ];
+    }
+
+    List<Widget> newsWidgets = [
       const SizedBox(height: 30),
     ];
 
-    for (int i = 0; i < 4; i++) {
-      DateTime newsDate = today.subtract(Duration(days: i));
-      String formattedDate = DateFormat('dd MMM yyyy').format(newsDate);
+    newsWidgets.addAll(newsData.map((news) {
+      bool isRead = news['is_read'] == true; // persistent storage value
+      DateTime newsDateTime = parseNewsDate(news['datetime']);
+      String title = news['title'];
+      String url = news['url'];
+      String source = news['source'];
+      bool isSaved = news['is_saved'] == true;
+      int newsId = news['news_id'];
+      final isReadGlobal =
+          NewsStateManager.allReadStatesNotifier.value[news['news_id']] ??
+              false;
 
-      savedNewsItems.add(
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NewsDetailPage(
+                    key: newsDetailPageKey,
+                    title: title,
+                    url: url,
+                    source: source,
+                    isSaved: isSaved,
+                    newsId: newsId,
+                    isRead: isReadGlobal,
+                    originalDatetime: newsDateTime,
+                  ),
+                ),
+              );
+
+              if (newsDetailPageKey.currentState != null) {
+                final updatedIsRead = newsDetailPageKey.currentState!.isRead;
+                final updatedIsSaved = newsDetailPageKey.currentState!.isSaved;
+                setState(() {
+                  final index =
+                      newsData.indexWhere((n) => n['news_id'] == newsId);
+                  if (index != -1) {
+                    newsData[index]['is_read'] = updatedIsRead;
+                    newsData[index]['is_saved'] = updatedIsSaved;
+                  }
+                });
+              }
+            },
+            child: Container(
               padding:
                   const EdgeInsets.symmetric(vertical: 10.0, horizontal: 32.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Past News ${i + 1}',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        formattedDate,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          DateFormat('dd MMM yyyy, HH:mm').format(newsDateTime),
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
                   ),
-                  if (i < 3)
+                  if (isRead)
                     const CircleAvatar(
                       radius: 12,
                       backgroundColor: Colors.green,
-                      child: Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 16,
-                      ),
+                      child: Icon(Icons.check, color: Colors.white, size: 16),
                     ),
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Divider(
-                color: Theme.of(context).dividerColor,
-                thickness: 3,
-              ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Divider(
+              color: Theme.of(context).dividerColor,
+              thickness: 3,
             ),
-          ],
-        ),
+          ),
+        ],
       );
-    }
-    return savedNewsItems;
+    }).toList());
+
+    return newsWidgets;
   }
 
   void _showWeeksDialog(BuildContext context) {
@@ -121,7 +289,6 @@ class _PastNewsPageState extends State<PastNewsPage> {
                     referenceDate.subtract(Duration(days: 7 * (10 - index)));
                 DateTime endOfWeek = startOfWeek.add(const Duration(days: 6));
 
-                // checj if the week is selected
                 bool isSelectedWeek = startOfWeek.isAtSameMomentAs(currentDate);
 
                 return ListTile(
@@ -137,6 +304,7 @@ class _PastNewsPageState extends State<PastNewsPage> {
                     Navigator.of(context).pop();
                     setState(() {
                       currentDate = startOfWeek;
+                      fetchNews(); // Fetch news for the selected week
                     });
                   },
                 );
@@ -163,65 +331,113 @@ class _PastNewsPageState extends State<PastNewsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _StickyHeaderDelegate(
-                child: Container(
-                  height: 160,
-                  color: Theme.of(context).appBarTheme.backgroundColor,
-                  padding: const EdgeInsets.only(
-                    top: 40.0,
-                    left: 16.0,
-                    right: 16.0,
-                    bottom: 16.0,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 10),
-                      Text(
-                        'Past News',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.secondary,
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await fetchNews();
+          },
+          child: CustomScrollView(
+            slivers: [
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _StickyHeaderDelegate(
+                  child: Container(
+                    height: 160,
+                    color: Theme.of(context).appBarTheme.backgroundColor,
+                    padding: const EdgeInsets.only(
+                      top: 40.0,
+                      left: 16.0,
+                      right: 16.0,
+                      bottom: 16.0,
+                    ),
+                    child: Stack(
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 10),
+                            Text(
+                              'Past News',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.secondary,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            GestureDetector(
+                              onTap: () => _showWeeksDialog(context),
+                              child: Container(
+                                padding: const EdgeInsets.all(8.0),
+                                decoration: BoxDecoration(
+                                  border:
+                                      Border.all(color: Colors.white, width: 2),
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                                child: Text(
+                                  getFormattedDate(),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.all(8.0),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.white, width: 2),
-                          borderRadius: BorderRadius.circular(5),
+                        Positioned(
+                          right: 0,
+                          child: IconButton(
+                            icon:
+                                const Icon(Icons.refresh, color: Colors.white),
+                            onPressed: () async {
+                              await fetchNews();
+                            },
+                          ),
                         ),
-                        child: GestureDetector(
-                          onTap: () => _showWeeksDialog(context),
-                          child: Text(
-                            getFormattedDate(),
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              fontWeight: FontWeight.w500,
+                        Positioned(
+                          right: 40,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isReversed
+                                  ? Theme.of(context).colorScheme.secondary
+                                  : Colors.transparent,
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.swap_vert,
+                                  color: Colors.white),
+                              onPressed: () {
+                                setState(() {
+                                  isReversed = !isReversed;
+                                  newsData = newsData.reversed.toList();
+                                });
+                              },
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            SliverList(
-              delegate: SliverChildListDelegate(generatePastNewsItems()),
-            ),
-          ],
+              isLoading
+                  ? const SliverFillRemaining(
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : SliverList(
+                      delegate: SliverChildListDelegate(
+                        generateNewsItems(),
+                      ),
+                    ),
+            ],
+          ),
         ),
       ),
     );
   }
+
 }
 
 class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
