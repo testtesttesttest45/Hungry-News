@@ -118,6 +118,11 @@ class PastNewsPageState extends State<PastNewsPage> {
     }
   }
 
+  Future<void> refreshPage() async {
+    await fetchNews();
+    setState(() {}); // Rebuild the page
+  }
+  
   String getTableNameForWeek(DateTime date) {
     String weekStart = DateFormat('ddMMyy').format(date);
     String weekEnd =

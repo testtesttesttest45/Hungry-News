@@ -148,7 +148,6 @@ class _MyHomePageState extends State<MyHomePage> {
         PastNewsPage(key: _pastNewsPageKey),
         MajorNewsPage(key: _majorNewsPageKey),
         SavedNewsPage(key: _savedNewsPageKey),
-        SavedNewsPage(key: _pastNewsPageKey),
         const SearchNewsPage(),
         SettingsPage(
           onThemeChanged: widget.onThemeChanged, //  callback to SettingsPage
@@ -169,6 +168,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
     if (_savedNewsPageKey.currentState != null) {
       _savedNewsPageKey.currentState!.resetSavedNews();
+    }
+
+    if (_pastNewsPageKey.currentState != null) {
+      _pastNewsPageKey.currentState!.refreshPage();
     }
   }
 
