@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-import 'pages/preference_news_page.dart';
+import 'pages/curated_news_page.dart';
 import 'pages/past_news_page.dart';
 import 'pages/major_news_page.dart';
 import 'pages/saved_news_page.dart';
@@ -141,9 +141,10 @@ class _MyHomePageState extends State<MyHomePage> {
   final GlobalKey<MajorNewsPageState> _majorNewsPageKey = GlobalKey();
   final GlobalKey<SavedNewsPageState> _savedNewsPageKey = GlobalKey();
   final GlobalKey<PastNewsPageState> _pastNewsPageKey = GlobalKey();
+  final GlobalKey<CuratedNewsPageState> _curatedNewsPageKey = GlobalKey();
 
   List<Widget> _pages(BuildContext context) => [
-        const PreferenceNewsPage(),
+        CuratedNewsPage(key: _curatedNewsPageKey),
         // PastNewsPage(testDate: DateTime(2024, 11, 10)),
         PastNewsPage(key: _pastNewsPageKey),
         MajorNewsPage(key: _majorNewsPageKey),
@@ -173,6 +174,10 @@ class _MyHomePageState extends State<MyHomePage> {
     if (_pastNewsPageKey.currentState != null) {
       _pastNewsPageKey.currentState!.refreshPage();
     }
+
+    if (_curatedNewsPageKey.currentState != null) {
+      _curatedNewsPageKey.currentState!.refreshPage();
+    }
   }
 
   @override
@@ -189,7 +194,7 @@ class _MyHomePageState extends State<MyHomePage> {
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-              icon: Icon(Icons.favorite), label: 'Preference'),
+              icon: Icon(Icons.local_library), label: 'Curated News'),
           BottomNavigationBarItem(
               icon: Icon(Icons.history), label: 'Past News'),
           BottomNavigationBarItem(
@@ -207,4 +212,5 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
+
 }

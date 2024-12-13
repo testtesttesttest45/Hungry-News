@@ -92,6 +92,42 @@ def get_past_news():
 
     return jsonify(results)
 
+@app.route('/curated-news')
+def get_curated_news():
+    config = {
+        'user': os.getenv('DB_USER'),
+        'password': os.getenv('DB_PASSWORD'),
+        'host': os.getenv('DB_HOST'),
+        'database': os.getenv('DB_NAME'),
+        'cursorclass': pymysql.cursors.DictCursor
+    }
+    
+    table_name = request.args.get('table_name')
+    if not table_name:
+        return jsonify({"error": "Missing table name"}), 400
+    
+    conn = pymysql.connect(**config)
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(f"SHOW TABLES LIKE '{table_name}';")
+            if not cursor.fetchone():
+                return jsonify({"error": "Table does not exist"}), 404
+            
+            # curated news (Singapore and impact 2)
+            query = f"""
+            SELECT news_id, title, url, datetime, source, impact_level
+            FROM `{table_name}`
+            WHERE source = 'cna_singapore' OR impact_level = 2
+            """
+            cursor.execute(query)
+            results = cursor.fetchall()
+    except pymysql.MySQLError as e:
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
+    finally:
+        conn.close()
+
+    return jsonify(results)
+
 
 @app.route('/proxy')
 def proxy():
