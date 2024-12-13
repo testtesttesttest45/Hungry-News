@@ -24,9 +24,16 @@ Future<Map<String, dynamic>> fetchArticleContent(
       List<Map<String, String>> images = [];
       List<List<InlineSpan>> paragraphs = [];
 
-      void processParagraphs(String selector) {
+      void processParagraphs(String selector, {bool excludeAds = true}) {
         document.querySelectorAll(selector).forEach((element) {
-          final spans = _extractTextAndLinks(element, unescape, context);
+          if (excludeAds &&
+              (element.text.contains("Advertisement") ||
+                  element.text.contains("Copyright") ||
+                  element.text.contains("Stay updated"))) {
+            return; // Skip boilerplate or ads
+          }
+
+          final spans = _extractTextAndLinks(element, unescape, context, baseUrl: url);
           if (spans.isNotEmpty) {
             paragraphs.add(spans);
           }
@@ -46,76 +53,20 @@ Future<Map<String, dynamic>> fetchArticleContent(
           }
         });
       } else if (url.contains("channelnewsasia.com")) {
-        final seenParagraphs = <String>{};
+        processParagraphs('div.text-long p');
 
-        // Handle paragraphs in div.text and split by <br> within <p>
-        document.querySelectorAll('div.text p').forEach((p) {
-          final rawHtml = p.innerHtml;
-          final splitParagraphs =
-              rawHtml.split(RegExp(r'(<br\s*/?>\s*){2,}')); // Split on <br><br>
-
-          for (var rawParagraph in splitParagraphs) {
-            final cleanedText =
-                dom.Element.html('<div>${rawParagraph.trim()}</div>')
-                    .text
-                    .trim();
-            if (cleanedText.isNotEmpty &&
-                !seenParagraphs.contains(cleanedText)) {
-              final wrappedHtml = '<div>${rawParagraph.trim()}</div>';
-              final element = dom.Element.html(wrappedHtml);
-
-              final spans = _extractTextAndLinks(element, unescape, context);
-              if (spans.isNotEmpty) {
-                paragraphs.add(spans);
-                seenParagraphs.add(cleanedText); // Track seen content
-              }
-            }
-          }
-        });
-
-        // Handle mixed content in div.text-long
-        document.querySelectorAll('div.text-long').forEach((div) {
-          final rawContent = div.innerHtml.split(RegExp(r'(<br\s*/?>\s*){2,}'));
-          for (var rawParagraph in rawContent) {
-            final cleanedText =
-                dom.Element.html('<div>${rawParagraph.trim()}</div>')
-                    .text
-                    .trim();
-            if (cleanedText.isNotEmpty &&
-                !seenParagraphs.contains(cleanedText)) {
-              final wrappedHtml = '<div>${rawParagraph.trim()}</div>';
-              final element = dom.Element.html(wrappedHtml);
-
-              final spans = _extractTextAndLinks(element, unescape, context);
-              if (spans.isNotEmpty) {
-                paragraphs.add(spans);
-                seenParagraphs.add(cleanedText); // Track seen content
-              }
-            }
-          }
-        });
-
-        // Extract images
-        document.querySelectorAll('figure img, div.text img').forEach((img) {
+        document.querySelectorAll('div.text-long img, figure img').forEach((img) {
           final src = img.attributes['src'] ?? '';
           final alt = img.attributes['alt'] ?? 'No caption available';
           if (src.isNotEmpty && src.startsWith('http')) {
             images.add({'src': src, 'alt': unescape.convert(alt)});
           }
         });
-
-        // Final cleanup: remove unnecessary trailing whitespace between paragraphs
-        paragraphs = paragraphs.where((spanList) {
-          final combinedText = spanList
-              .map((span) => (span as TextSpan).text ?? '')
-              .join(' ')
-              .trim();
-          return combinedText.isNotEmpty;
-        }).toList();
       } else {
         processParagraphs('p');
 
-        document.getElementsByTagName('img').forEach((img) {
+        // extract all images
+        document.querySelectorAll('img').forEach((img) {
           final src = img.attributes['src'] ?? '';
           final alt = img.attributes['alt'] ?? 'No caption available';
           if (src.isNotEmpty && src.startsWith('http')) {
@@ -158,8 +109,22 @@ Future<Map<String, dynamic>> fetchArticleContent(
 }
 
 List<InlineSpan> _extractTextAndLinks(
-    dom.Element element, HtmlUnescape unescape, BuildContext context) {
+    dom.Element element, HtmlUnescape unescape, BuildContext context,
+    {required String baseUrl}) {
   final spans = <InlineSpan>[];
+  var previousNodeWasText = false;
+
+  // we ensures the baseUrl has a valid scheme
+  Uri? baseUri;
+  try {
+    baseUri = Uri.parse(baseUrl);
+    if (baseUri.scheme.isEmpty) {
+      throw StateError("Base URL lacks a scheme: $baseUrl");
+    }
+  } catch (e) {
+    print("Invalid base URL: $baseUrl. Error: $e");
+    baseUri = null;
+  }
 
   for (var i = 0; i < element.nodes.length; i++) {
     final node = element.nodes[i];
@@ -168,18 +133,32 @@ List<InlineSpan> _extractTextAndLinks(
       final cleanText = unescape
           .convert(node.text.trim())
           .replaceAll(RegExp(r'\s*\n\s*'), ' ')
-          .replaceAll(RegExp(r'^"\s*|"\s*$'), '"')
-          .replaceAll(
-              RegExp(r'(\s*<br>\s*)+'), '\n'); // Convert <br> to newlines
+          .replaceAll(RegExp(r'\s+'), ' '); // normalize the whitespaces
 
       if (cleanText.isNotEmpty) {
+        if (previousNodeWasText) {
+          spans.add(const TextSpan(text: ' '));
+        }
         spans.add(TextSpan(text: cleanText));
+        previousNodeWasText = true;
       }
     } else if (node is dom.Element && node.localName == 'a') {
-      final link = node.attributes['href'] ?? '';
+      var link = node.attributes['href'] ?? '';
       final linkText = unescape.convert(node.text.trim());
 
+      if (link.isNotEmpty && !link.startsWith('http') && baseUri != null) {
+        // resolve relative links to absolution
+        if (link.startsWith('/')) {
+          link = baseUri.origin + link;
+        } else {
+          link = baseUri.resolve(link).toString();
+        }
+      }
+
       if (linkText.isNotEmpty) {
+        if (previousNodeWasText) {
+          spans.add(const TextSpan(text: ' '));
+        }
         spans.add(
           TextSpan(
             text: linkText,
@@ -189,36 +168,38 @@ List<InlineSpan> _extractTextAndLinks(
             ),
             recognizer: TapGestureRecognizer()
               ..onTap = () {
-                final theme = Theme.of(context);
-
-                launchUrl(
-                  Uri.parse(link),
-                  customTabsOptions: CustomTabsOptions(
-                    colorSchemes: CustomTabsColorSchemes.defaults(
-                      toolbarColor: theme.colorScheme.surface,
-                    ),
-                    shareState: CustomTabsShareState.on,
-                    urlBarHidingEnabled: true,
-                    showTitle: true,
-                    closeButton: CustomTabsCloseButton(
-                      icon: CustomTabsCloseButtonIcons.back,
-                    ),
-                  ),
-                );
+                try {
+                  launchUrl(Uri.parse(link));
+                } catch (e) {
+                  print("Failed to launch URL: $link. Error: $e");
+                }
               },
           ),
         );
+
+        // add 1 space if the next node is not punctuation
+        if (i < element.nodes.length - 1) {
+          final nextNode = element.nodes[i + 1];
+          if (nextNode is dom.Text) {
+            final nextText = nextNode.text.trim();
+            if (nextText.isNotEmpty &&
+                !RegExp(r'^[.,;!?]').hasMatch(nextText)) {
+              spans.add(const TextSpan(text: ' '));
+            }
+          }
+        }
+        previousNodeWasText = false;
       }
-    }
-
-    if (i < element.nodes.length - 1) {
-      final nextNode = element.nodes[i + 1];
-      final isPunctuation = nextNode is dom.Text &&
-          nextNode.text.trim().startsWith(RegExp(r'[.,;?!]'));
-      final isBreak = nextNode is dom.Element && nextNode.localName == 'br';
-
-      if (!isPunctuation && !isBreak) {
-        spans.add(const TextSpan(text: ' '));
+    } else if (node is dom.Element) {
+      // recursive process of nested elements
+      final childSpans =
+          _extractTextAndLinks(node, unescape, context, baseUrl: baseUrl);
+      if (childSpans.isNotEmpty) {
+        if (previousNodeWasText) {
+          spans.add(const TextSpan(text: ' '));
+        }
+        spans.addAll(childSpans);
+        previousNodeWasText = true;
       }
     }
   }

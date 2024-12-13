@@ -85,7 +85,7 @@ class CuratedNewsPageState extends State<CuratedNewsPage> {
     String tableName = getTableNameForWeek(currentDate);
     try {
       final response = await http.get(Uri.parse(
-          'http://192.168.1.82:5000/curated-news?table_name=$tableName'));
+          'https://hungrynews-backend.onrender.com/curated-news?table_name=$tableName'));
 
       if (response.statusCode == 200) {
         List<dynamic> fetchedData = jsonDecode(response.body);
