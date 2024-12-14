@@ -61,8 +61,10 @@ class MajorNewsPageState extends State<MajorNewsPage> {
     setState(() {
       final savedStates = NewsStateManager.allSavedStatesNotifier.value;
       for (var news in newsData) {
-        if (savedStates.containsKey(news['news_id'])) {
-          news['is_saved'] = savedStates[news['news_id']];
+        final key = NewsStateManager.generateCompositeKey(
+            news['table_name'], news['news_id']);
+        if (savedStates.containsKey(key)) {
+          news['is_saved'] = savedStates[key];
         }
       }
     });
@@ -72,8 +74,10 @@ class MajorNewsPageState extends State<MajorNewsPage> {
     setState(() {
       final readStates = NewsStateManager.allReadStatesNotifier.value;
       for (var news in newsData) {
-        if (readStates.containsKey(news['news_id'])) {
-          news['is_read'] = readStates[news['news_id']];
+        final key = NewsStateManager.generateCompositeKey(
+            news['table_name'], news['news_id']);
+        if (readStates.containsKey(key)) {
+          news['is_read'] = readStates[key];
         }
       }
     });
@@ -95,6 +99,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
       isLoading = true;
       errorMessage = '';
     });
+    String tableName = getWeekTableName(currentDate);
     try {
       final response = await http
           .get(Uri.parse('https://hungrynews-backend.onrender.com/major-news'));
@@ -104,8 +109,11 @@ class MajorNewsPageState extends State<MajorNewsPage> {
         // Overwrite is_read and is_saved from persistent storage
         for (var news in fetchedData) {
           int newsId = news['news_id'];
-          news['is_read'] = await NewsStateManager.getIsRead(newsId) ?? false;
-          news['is_saved'] = await NewsStateManager.getIsSaved(newsId) ?? false;
+          news['table_name'] = tableName;
+          news['is_read'] =
+              await NewsStateManager.getIsRead(tableName, newsId) ?? false;
+          news['is_saved'] =
+              await NewsStateManager.getIsSaved(tableName, newsId) ?? false;
         }
 
         setState(() {
@@ -131,6 +139,16 @@ class MajorNewsPageState extends State<MajorNewsPage> {
         errorMessage = e.toString(); // Store the error message
       });
     }
+  }
+
+  String getWeekTableName(DateTime date) {
+    String weekStart = DateFormat('ddMMyy').format(
+      date.subtract(Duration(days: date.weekday - 1)),
+    );
+    String weekEnd = DateFormat('ddMMyy').format(
+      date.add(Duration(days: 7 - date.weekday)),
+    );
+    return '$weekStart-$weekEnd';
   }
 
   String getFormattedDate() {
@@ -189,7 +207,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
         children: [
           InkWell(
             onTap: () async {
-              await Navigator.push(
+              final updatedData = await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => NewsDetailPage(
@@ -201,20 +219,32 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                     newsId: newsId,
                     isRead: isReadGlobal,
                     originalDatetime: newsDateTime,
+                    tableName: news['table_name'],
                   ),
                 ),
               );
 
-              if (newsDetailPageKey.currentState != null) {
-                final updatedIsRead = newsDetailPageKey.currentState!.isRead;
-                final updatedIsSaved = newsDetailPageKey.currentState!.isSaved;
+              if (updatedData != null) {
+                final updatedIsRead = updatedData['is_read'] ?? false;
+                final updatedIsSaved = updatedData['is_saved'] ?? false;
+
                 setState(() {
-                  final index =
-                      newsData.indexWhere((n) => n['news_id'] == newsId);
+                  // Update the local `newsData` list
+                  final index = newsData.indexWhere((n) =>
+                      n['news_id'] == newsId &&
+                      n['table_name'] == news['table_name']);
                   if (index != -1) {
                     newsData[index]['is_read'] = updatedIsRead;
                     newsData[index]['is_saved'] = updatedIsSaved;
                   }
+
+                  // Sync with global state
+                  final compositeKey = NewsStateManager.generateCompositeKey(
+                      news['table_name'], newsId);
+                  NewsStateManager.allReadStatesNotifier.value = {
+                    ...NewsStateManager.allReadStatesNotifier.value,
+                    compositeKey: updatedIsRead,
+                  };
                 });
               }
             },

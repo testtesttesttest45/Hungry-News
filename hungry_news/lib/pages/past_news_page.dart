@@ -48,8 +48,10 @@ class PastNewsPageState extends State<PastNewsPage> {
     setState(() {
       final savedStates = NewsStateManager.allSavedStatesNotifier.value;
       for (var news in newsData) {
-        if (savedStates.containsKey(news['news_id'])) {
-          news['is_saved'] = savedStates[news['news_id']];
+        final key = NewsStateManager.generateCompositeKey(
+            news['table_name'], news['news_id']);
+        if (savedStates.containsKey(key)) {
+          news['is_saved'] = savedStates[key];
         }
       }
     });
@@ -59,8 +61,10 @@ class PastNewsPageState extends State<PastNewsPage> {
     setState(() {
       final readStates = NewsStateManager.allReadStatesNotifier.value;
       for (var news in newsData) {
-        if (readStates.containsKey(news['news_id'])) {
-          news['is_read'] = readStates[news['news_id']];
+        final key = NewsStateManager.generateCompositeKey(
+            news['table_name'], news['news_id']);
+        if (readStates.containsKey(key)) {
+          news['is_read'] = readStates[key];
         }
       }
     });
@@ -88,8 +92,12 @@ class PastNewsPageState extends State<PastNewsPage> {
 
         for (var news in fetchedData) {
           int newsId = news['news_id'];
-          news['is_read'] = await NewsStateManager.getIsRead(newsId) ?? false;
-          news['is_saved'] = await NewsStateManager.getIsSaved(newsId) ?? false;
+          news['table_name'] = tableName;
+          news['is_read'] =
+              await NewsStateManager.getIsRead(tableName, newsId) ?? false;
+          news['is_saved'] =
+              await NewsStateManager.getIsSaved(tableName, newsId) ?? false;
+          news['table_name'] = tableName;
         }
 
         setState(() {
@@ -122,7 +130,7 @@ class PastNewsPageState extends State<PastNewsPage> {
     await fetchNews();
     setState(() {}); // Rebuild the page
   }
-  
+
   String getTableNameForWeek(DateTime date) {
     String weekStart = DateFormat('ddMMyy').format(date);
     String weekEnd =
@@ -200,6 +208,7 @@ class PastNewsPageState extends State<PastNewsPage> {
                     newsId: newsId,
                     isRead: isReadGlobal,
                     originalDatetime: newsDateTime,
+                    tableName: news['table_name'],
                   ),
                 ),
               );
@@ -208,8 +217,8 @@ class PastNewsPageState extends State<PastNewsPage> {
                 final updatedIsRead = newsDetailPageKey.currentState!.isRead;
                 final updatedIsSaved = newsDetailPageKey.currentState!.isSaved;
                 setState(() {
-                  final index =
-                      newsData.indexWhere((n) => n['news_id'] == newsId);
+                  final index = newsData.indexWhere((n) =>
+                      n['news_id'] == newsId && n['table_name'] == news['table_name']);
                   if (index != -1) {
                     newsData[index]['is_read'] = updatedIsRead;
                     newsData[index]['is_saved'] = updatedIsSaved;
@@ -442,7 +451,6 @@ class PastNewsPageState extends State<PastNewsPage> {
       ),
     );
   }
-
 }
 
 class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {

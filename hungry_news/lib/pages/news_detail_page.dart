@@ -33,7 +33,8 @@ Future<Map<String, dynamic>> fetchArticleContent(
             return; // Skip boilerplate or ads
           }
 
-          final spans = _extractTextAndLinks(element, unescape, context, baseUrl: url);
+          final spans =
+              _extractTextAndLinks(element, unescape, context, baseUrl: url);
           if (spans.isNotEmpty) {
             paragraphs.add(spans);
           }
@@ -55,7 +56,9 @@ Future<Map<String, dynamic>> fetchArticleContent(
       } else if (url.contains("channelnewsasia.com")) {
         processParagraphs('div.text-long p');
 
-        document.querySelectorAll('div.text-long img, figure img').forEach((img) {
+        document
+            .querySelectorAll('div.text-long img, figure img')
+            .forEach((img) {
           final src = img.attributes['src'] ?? '';
           final alt = img.attributes['alt'] ?? 'No caption available';
           if (src.isNotEmpty && src.startsWith('http')) {
@@ -215,6 +218,7 @@ class NewsDetailPage extends StatefulWidget {
   final int newsId;
   final bool isRead;
   final DateTime originalDatetime;
+  final String tableName;
 
   const NewsDetailPage({
     super.key,
@@ -225,6 +229,7 @@ class NewsDetailPage extends StatefulWidget {
     required this.newsId,
     required this.isRead,
     required this.originalDatetime,
+    required this.tableName,
   });
 
   @override
@@ -254,7 +259,10 @@ class NewsDetailPageState extends State<NewsDetailPage> {
     flutterTts = FlutterTts();
 
     isSaved = widget.isSaved;
-    isRead = widget.isRead;
+    final compositeKey =
+        NewsStateManager.generateCompositeKey(widget.tableName, widget.newsId);
+    isRead = NewsStateManager.allReadStatesNotifier.value[compositeKey] ??
+        widget.isRead;
 
     flutterTts.setErrorHandler((msg) {
       setState(() {
@@ -422,6 +430,7 @@ class NewsDetailPageState extends State<NewsDetailPage> {
 
     // update saved state
     await NewsStateManager.setIsSaved(
+      widget.tableName,
       widget.newsId,
       newSavedState,
       newsData: newSavedState ? newsData : null,
@@ -801,7 +810,7 @@ class NewsDetailPageState extends State<NewsDetailPage> {
       });
 
       // here we update the read state globally
-      await NewsStateManager.setIsRead(widget.newsId, true);
+      await NewsStateManager.setIsRead(widget.tableName, widget.newsId, true);
     }
 
     return Padding(

@@ -14,23 +14,27 @@ class NewsStateManager {
   static const String _savedNewsListKey = 'savedNews';
   static const String _isReadKey = 'isRead_';
 
-  static Future<bool?> getIsRead(int newsId) async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_isReadKey + newsId.toString());
+  // create a composite key for a specific table and news ID
+  static String generateCompositeKey(String tableName, int newsId) {
+    return '$tableName|$newsId';
   }
 
-  // Get the `is_saved` state of a news item
-  static Future<bool?> getIsSaved(int newsId) async {
+  static Future<bool?> getIsRead(String tableName, int newsId) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_isSavedKey + newsId.toString());
+    final key = _isReadKey + generateCompositeKey(tableName, newsId);
+    return prefs.getBool(key);
   }
 
-  // notifier for saved news
+  static Future<bool?> getIsSaved(String tableName, int newsId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _isSavedKey + generateCompositeKey(tableName, newsId);
+    return prefs.getBool(key);
+  }
+
   static final ValueNotifier<List<Map<String, dynamic>>> savedNewsNotifier =
       ValueNotifier([]);
 
-  // notifier for all news saved states (affects Major News Page)
-  static final ValueNotifier<Map<int, bool>> allSavedStatesNotifier =
+  static final ValueNotifier<Map<String, bool>> allSavedStatesNotifier =
       ValueNotifier({});
 
   static Future<void> initializeSavedNews() async {
@@ -42,19 +46,19 @@ class NewsStateManager {
           .map((item) => jsonDecode(item) as Map<String, dynamic>)
           .toList();
 
-      // sync is_read using both allReadStatesNotifier and persisted data
+      // sync is_read using both global notifier and persisted data
       final updatedSavedNews = savedNews.map((news) {
-        final isReadGlobal =
-            allReadStatesNotifier.value[news['news_id']] ?? false;
+        final compositeKey =
+            generateCompositeKey(news['table_name'], news['news_id']);
+        final isReadGlobal = allReadStatesNotifier.value[compositeKey] ?? false;
         final isReadPersisted =
-            prefs.getBool(_isReadKey + news['news_id'].toString()) ?? false;
+            prefs.getBool(_isReadKey + compositeKey) ?? false;
         return {
           ...news,
-          'is_read': isReadGlobal || isReadPersisted, // merge read states
+          'is_read': isReadGlobal || isReadPersisted, // combine read states
         };
       }).toList();
 
-      // Sort by publishing date, newest first by default, handle for newly saved news to respect sorting state
       updatedSavedNews.sort((a, b) {
         return DateTime.parse(b['datetime'])
             .compareTo(DateTime.parse(a['datetime']));
@@ -62,9 +66,10 @@ class NewsStateManager {
 
       savedNewsNotifier.value = updatedSavedNews;
 
-      // Populate allSavedStatesNotifier
+      // populate allSavedStatesNotifier
       final savedStates = {
-        for (var news in updatedSavedNews) news['news_id'] as int: true
+        for (var news in updatedSavedNews)
+          generateCompositeKey(news['table_name'], news['news_id']): true
       };
       allSavedStatesNotifier.value = savedStates;
     } else {
@@ -74,26 +79,30 @@ class NewsStateManager {
   }
 
   static Future<void> setIsSaved(
+    String tableName,
     int newsId,
     bool isSaved, {
     Map<String, dynamic>? newsData,
     required DateTime originalDatetime,
   }) async {
     final prefs = await SharedPreferences.getInstance();
+    final compositeKey = generateCompositeKey(tableName, newsId);
 
     if (isSaved && newsData != null) {
-      // update saved news
       newsData['datetime'] = originalDatetime.toIso8601String();
-      final currentSavedNews = savedNewsNotifier.value;
+      newsData['table_name'] = tableName;
 
-      // anti duplicate entry, maybe no need
-      if (!currentSavedNews.any((news) => news['news_id'] == newsId)) {
+      final currentSavedNews = savedNewsNotifier.value;
+      if (!currentSavedNews.any((news) =>
+          generateCompositeKey(news['table_name'], news['news_id']) ==
+          compositeKey)) {
         savedNewsNotifier.value = [...currentSavedNews, newsData];
       }
     } else {
-      // remove news from saved list
       savedNewsNotifier.value = savedNewsNotifier.value
-          .where((news) => news['news_id'] != newsId)
+          .where((news) =>
+              generateCompositeKey(news['table_name'], news['news_id']) !=
+              compositeKey)
           .toList();
     }
 
@@ -101,52 +110,49 @@ class NewsStateManager {
         savedNewsNotifier.value.map((news) => jsonEncode(news)).toList();
     await prefs.setStringList(_savedNewsListKey, updatedList);
 
-    // Update the saved state for the specific news item
-    await prefs.setBool(_isSavedKey + newsId.toString(), isSaved);
+    final key = _isSavedKey + compositeKey;
+    await prefs.setBool(key, isSaved);
 
-    // Update allSavedStatesNotifier
     allSavedStatesNotifier.value = {
       ...allSavedStatesNotifier.value,
-      newsId: isSaved,
+      compositeKey: isSaved,
     };
 
-    // Respect the current sorting flag
     _sortSavedNewsRespectingFlag();
   }
 
   static void _sortSavedNewsRespectingFlag() {
-    final isReversed =
-        SavedNewsPageState.isReversed; // Access global state flag
+    final isReversed = SavedNewsPageState.isReversed;
 
-    // Sort by publishing date in descending order (most recent first)
     savedNewsNotifier.value.sort((a, b) {
       return DateTime.parse(b['datetime'])
           .compareTo(DateTime.parse(a['datetime']));
     });
 
-    // Reverse the list if `isReversed` is true
     if (isReversed) {
       savedNewsNotifier.value = savedNewsNotifier.value.reversed.toList();
     }
   }
 
-  static final ValueNotifier<Map<int, bool>> allReadStatesNotifier =
+  static final ValueNotifier<Map<String, bool>> allReadStatesNotifier =
       ValueNotifier({});
 
-  static Future<void> setIsRead(int newsId, bool isRead) async {
+  static Future<void> setIsRead(
+      String tableName, int newsId, bool isRead) async {
     final prefs = await SharedPreferences.getInstance();
+    final compositeKey = generateCompositeKey(tableName, newsId);
 
-    // update the read state in persistent storage
-    await prefs.setBool(_isReadKey + newsId.toString(), isRead);
+    final key = _isReadKey + compositeKey;
+    await prefs.setBool(key, isRead);
 
-    // update the read states notifier
     allReadStatesNotifier.value = {
       ...allReadStatesNotifier.value,
-      newsId: isRead,
+      compositeKey: isRead,
     };
 
     savedNewsNotifier.value = savedNewsNotifier.value.map((news) {
-      if (news['news_id'] == newsId) {
+      if (generateCompositeKey(news['table_name'], news['news_id']) ==
+          compositeKey) {
         return {
           ...news,
           'is_read': isRead,

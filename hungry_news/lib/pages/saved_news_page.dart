@@ -106,7 +106,7 @@ class SavedNewsPageState extends State<SavedNewsPage> {
         children: [
           InkWell(
             onTap: () async {
-              final updatedData = await Navigator.push(
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => NewsDetailPage(
@@ -117,24 +117,47 @@ class SavedNewsPageState extends State<SavedNewsPage> {
                     newsId: news['news_id'],
                     isRead: isRead,
                     originalDatetime: datetime,
+                    tableName: news['table_name'],
                   ),
                 ),
               );
 
-              if (updatedData != null) {
-                setState(() {
-                  final isStillSaved = NewsStateManager
-                          .allSavedStatesNotifier.value[news['news_id']] ??
-                      false;
+              // Resynchronize saved news state after returning
+              setState(() {
+                final currentSavedNews =
+                    NewsStateManager.savedNewsNotifier.value;
 
-                  if (!isStillSaved) {
-                    NewsStateManager.savedNewsNotifier.value = NewsStateManager
-                        .savedNewsNotifier.value
-                        .where((n) => n['news_id'] != news['news_id'])
-                        .toList();
+                // Check if the news item is still saved
+                final compositeKey = NewsStateManager.generateCompositeKey(
+                  news['table_name'],
+                  news['news_id'],
+                );
+
+                final isStillSaved = NewsStateManager
+                        .allSavedStatesNotifier.value[compositeKey] ??
+                    false;
+
+                if (isStillSaved) {
+                  // Ensure the saved news item exists
+                  if (!currentSavedNews.any((n) =>
+                      NewsStateManager.generateCompositeKey(
+                          n['table_name'], n['news_id']) ==
+                      compositeKey)) {
+                    NewsStateManager.savedNewsNotifier.value = [
+                      ...currentSavedNews,
+                      news, // Add back the item if it was somehow removed
+                    ];
                   }
-                });
-              }
+                } else {
+                  // Remove the news item if it is no longer saved
+                  NewsStateManager.savedNewsNotifier.value = currentSavedNews
+                      .where((n) =>
+                          NewsStateManager.generateCompositeKey(
+                              n['table_name'], n['news_id']) !=
+                          compositeKey)
+                      .toList();
+                }
+              });
             },
             child: Container(
               padding: const EdgeInsets.symmetric(
