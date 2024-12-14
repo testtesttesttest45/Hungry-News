@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -126,7 +127,21 @@ class _MyAppState extends State<MyApp> {
       home: MyHomePage(
         onThemeChanged: toggleTheme,
       ),
+      navigatorObservers: [CustomNavigatorObserver()],
     );
+  }
+}
+
+class CustomNavigatorObserver extends NavigatorObserver {
+  @override
+  void didPop(Route route, Route? previousRoute) {
+    super.didPop(route, previousRoute);
+
+    if (previousRoute == null) {
+      // Back gesture used on the first page of a stack
+      navigator?.pushReplacement(
+          MaterialPageRoute(builder: (context) => const MajorNewsPage()));
+    }
   }
 }
 
@@ -140,7 +155,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _selectedIndex = 2; //  Major News page by default
+  int _selectedIndex = 2; // Major News page by default
   final GlobalKey<MajorNewsPageState> _majorNewsPageKey = GlobalKey();
   final GlobalKey<SavedNewsPageState> _savedNewsPageKey = GlobalKey();
   final GlobalKey<PastNewsPageState> _pastNewsPageKey = GlobalKey();
@@ -166,21 +181,19 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _updateUnreadNewsCount() {
     if (_majorNewsPageKey.currentState != null) {
-      setState(() {
-      });
+      setState(() {});
     }
   }
 
   List<Widget> _pages(BuildContext context) => [
         CuratedNewsPage(key: _curatedNewsPageKey),
-        // PastNewsPage(testDate: DateTime(2024, 11, 10)),
         PastNewsPage(key: _pastNewsPageKey),
         MajorNewsPage(key: _majorNewsPageKey),
         SavedNewsPage(key: _savedNewsPageKey),
         SearchNewsPage(key: _searchNewsPageKey),
         SettingsPage(
-          onThemeChanged: widget.onThemeChanged, //  callback to SettingsPage
-          onResetApp: _resetAppCallback, // Pass reset callback
+          onThemeChanged: widget.onThemeChanged,
+          onResetApp: _resetAppCallback,
         ),
       ];
 
@@ -212,49 +225,69 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size.zero,
-        child: Container(),
-      ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages(context),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: <BottomNavigationBarItem>[
-          const BottomNavigationBarItem(
-              icon: Icon(Icons.local_library), label: 'Curated News'),
-          const BottomNavigationBarItem(
-              icon: Icon(Icons.history), label: 'Past News'),
-          BottomNavigationBarItem(
-            icon: ValueListenableBuilder<int>(
-              valueListenable: NewsStateManager.unreadMajorNewsCount,
-              builder: (context, unreadCount, _) {
-                return badges.Badge(
-                  badgeContent: Text(
-                    '$unreadCount',
-                    style: const TextStyle(color: Colors.white, fontSize: 10),
-                  ),
-                  showBadge: unreadCount > 0,
-                  child: const Icon(Icons.public),
-                );
-              },
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, void _) async {
+        if (!didPop) {
+          if (_selectedIndex != 2) {
+            setState(() {
+              _selectedIndex = 2; // redirect to Major News page
+            });
+          } else {
+            // minimize the app when already on Major News
+            try {
+              const platform = MethodChannel('com.example.app/minimize');
+              await platform.invokeMethod('moveTaskToBack');
+            } catch (e) {
+              debugPrint('Error minimizing the app: $e');
+            }
+          }
+        }
+      },
+      child: Scaffold(
+        appBar: PreferredSize(
+          preferredSize: Size.zero,
+          child: Container(),
+        ),
+        body: IndexedStack(
+          index: _selectedIndex,
+          children: _pages(context),
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          items: <BottomNavigationBarItem>[
+            const BottomNavigationBarItem(
+                icon: Icon(Icons.local_library), label: 'Curated News'),
+            const BottomNavigationBarItem(
+                icon: Icon(Icons.history), label: 'Past News'),
+            BottomNavigationBarItem(
+              icon: ValueListenableBuilder<int>(
+                valueListenable: NewsStateManager.unreadMajorNewsCount,
+                builder: (context, unreadCount, _) {
+                  return badges.Badge(
+                    badgeContent: Text(
+                      '$unreadCount',
+                      style: const TextStyle(color: Colors.white, fontSize: 10),
+                    ),
+                    showBadge: unreadCount > 0,
+                    child: const Icon(Icons.public),
+                  );
+                },
+              ),
+              label: 'Major News',
             ),
-            label: 'Major News',
-          ),
-          const BottomNavigationBarItem(
-              icon: Icon(Icons.save), label: 'Saved News'),
-          const BottomNavigationBarItem(
-              icon: Icon(Icons.search), label: 'Search'),
-          const BottomNavigationBarItem(
-              icon: Icon(Icons.settings), label: 'Settings'),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.amber[800],
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
-        backgroundColor: Theme.of(context).colorScheme.surface,
+            const BottomNavigationBarItem(
+                icon: Icon(Icons.save), label: 'Saved News'),
+            const BottomNavigationBarItem(
+                icon: Icon(Icons.search), label: 'Search'),
+            const BottomNavigationBarItem(
+                icon: Icon(Icons.settings), label: 'Settings'),
+          ],
+          currentIndex: _selectedIndex,
+          selectedItemColor: Colors.amber[800],
+          unselectedItemColor: Colors.grey,
+          onTap: _onItemTapped,
+          backgroundColor: Theme.of(context).colorScheme.surface,
+        ),
       ),
     );
   }

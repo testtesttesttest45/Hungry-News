@@ -148,9 +148,9 @@ class MajorNewsPageState extends State<MajorNewsPage> {
   void decrementUnreadNewsCount() {
     if (unreadNewsCount.value > 0) {
       unreadNewsCount.value--;
-      print("Unread count decremented: ${unreadNewsCount.value}");
+      debugPrint("Unread count decremented: ${unreadNewsCount.value}");
     } else {
-      print("Unread count is already 0");
+      debugPrint("Unread count is already 0");
     }
   }
 
