@@ -464,7 +464,7 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                 child: Container(
                   height: 160,
                   color: widget.impactLevel == 3
-                      ? Theme.of(context).colorScheme.secondary
+                      ? Theme.of(context).colorScheme.secondary // ImpactLevel 3
                       : Theme.of(context).appBarTheme.backgroundColor,
                   padding: const EdgeInsets.only(
                       top: 40.0, left: 16.0, right: 16.0, bottom: 16.0),
@@ -478,7 +478,9 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: widget.impactLevel == 3
-                                  ? Theme.of(context).colorScheme.primary
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .primary // ImpactLevel 3
                                   : Theme.of(context).colorScheme.secondary,
                             ),
                         textAlign: TextAlign.left,
@@ -490,293 +492,270 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                 ),
               ),
             ),
-            FutureBuilder<Map<String, dynamic>>(
-              future: contentFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 32.0),
-                      child: Column(
-                        children: [
-                          SizedBox(
-                            height: 275,
-                            child: Center(child: CircularProgressIndicator()),
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            "Loading content...",
-                            style: TextStyle(fontSize: 16),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                } else if (snapshot.hasError) {
-                  return SliverToBoxAdapter(
-                    child: Padding(
+            SliverFillRemaining(
+              child: FutureBuilder<Map<String, dynamic>>(
+                future: contentFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(
+                      child: Text("Error: ${snapshot.error}"),
+                    );
+                  } else {
+                    final images = snapshot.data?['images'] ?? [];
+                    originalContent =
+                        snapshot.data?['content'] as List<List<InlineSpan>>;
+
+                    final paragraphs =
+                        isSummarized ? summarizedContent : originalContent;
+
+                    final bool hasContent = originalContent.isNotEmpty;
+
+                    return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                      child: Center(
-                        child: Text(
-                          "Error: ${snapshot.error}",
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      ),
-                    ),
-                  );
-                } else {
-                  final images = snapshot.data?['images'] ?? [];
-                  originalContent =
-                      snapshot.data?['content'] as List<List<InlineSpan>>;
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (images.isNotEmpty)
+                              SizedBox(
+                                width: 400,
+                                height: 275,
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    PageView.builder(
+                                      controller: _pageController,
+                                      itemCount: images.length,
+                                      onPageChanged: (index) {
+                                        setState(() {
+                                          currentPage = index;
+                                        });
+                                      },
+                                      itemBuilder: (context, index) {
+                                        final imageUrl = images[index]['src']!;
+                                        final caption = images[index]['alt']!;
 
-                  final paragraphs =
-                      isSummarized ? summarizedContent : originalContent;
-                  final bool hasContent = originalContent.isNotEmpty;
-
-                  return SliverList(
-                    delegate: SliverChildListDelegate(
-                      [
-                        if (images.isNotEmpty)
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 32.0),
-                            child: Column(
-                              children: [
-                                const SizedBox(height: 16),
-                                SizedBox(
-                                  width: double.infinity,
-                                  height: 275,
-                                  child: Stack(
-                                    children: [
-                                      PageView.builder(
-                                        controller: _pageController,
-                                        itemCount: images.length,
-                                        onPageChanged: (index) {
-                                          setState(() {
-                                            currentPage = index;
-                                          });
-                                        },
-                                        itemBuilder: (context, index) {
-                                          final imageUrl =
-                                              images[index]['src']!;
-                                          final caption = images[index]['alt']!;
-
-                                          return Column(
-                                            children: [
-                                              GestureDetector(
-                                                onTap: () =>
-                                                    _showFullScreenImages(
-                                                        images, index),
+                                        return Column(
+                                          children: [
+                                            const SizedBox(height: 20),
+                                            GestureDetector(
+                                              onTap: () =>
+                                                  _showFullScreenImages(
+                                                      images, index),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 32.0),
                                                 child: ClipRRect(
                                                   borderRadius:
                                                       BorderRadius.circular(
                                                           8.0),
-                                                  child: Image.network(
-                                                    imageUrl,
+                                                  child: SizedBox(
                                                     height: 180,
-                                                    fit: BoxFit.cover,
+                                                    child: Image.network(
+                                                      imageUrl,
+                                                      fit: BoxFit.contain,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
-                                              const SizedBox(height: 8),
-                                              Text(
-                                                caption,
-                                                textAlign: TextAlign.center,
-                                                maxLines: 3,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium
-                                                    ?.copyWith(
-                                                      fontStyle:
-                                                          FontStyle.italic,
-                                                      fontSize: 14,
-                                                      color: Colors.grey[600],
-                                                    ),
-                                              ),
-                                            ],
-                                          );
-                                        },
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              caption,
+                                              textAlign: TextAlign.center,
+                                              maxLines: 3,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium
+                                                  ?.copyWith(
+                                                    fontStyle: FontStyle.italic,
+                                                    fontSize: 14,
+                                                    color: Colors.grey[600],
+                                                  ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                    if (currentPage > 0)
+                                      Positioned(
+                                        left: -5,
+                                        top: 75,
+                                        child: IconButton(
+                                          icon: Icon(Icons.arrow_left,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface),
+                                          iconSize: 24,
+                                          onPressed: () {
+                                            if (currentPage > 0) {
+                                              _pageController.previousPage(
+                                                duration: const Duration(
+                                                    milliseconds: 300),
+                                                curve: Curves.easeInOut,
+                                              );
+                                            }
+                                          },
+                                        ),
                                       ),
-                                      if (currentPage > 0)
-                                        Positioned(
-                                          left: -16,
-                                          top: 75,
-                                          child: IconButton(
-                                            icon: Icon(
-                                              Icons.arrow_left,
+                                    if (currentPage < images.length - 1)
+                                      Positioned(
+                                        right: -5,
+                                        top: 75,
+                                        child: IconButton(
+                                          icon: Icon(Icons.arrow_right,
                                               color: Theme.of(context)
                                                   .colorScheme
-                                                  .onSurface,
-                                            ),
-                                            iconSize: 32,
-                                            onPressed: () {
-                                              if (currentPage > 0) {
-                                                _pageController.previousPage(
-                                                  duration: const Duration(
-                                                      milliseconds: 300),
-                                                  curve: Curves.easeInOut,
-                                                );
-                                              }
-                                            },
-                                          ),
+                                                  .onSurface),
+                                          iconSize: 24,
+                                          onPressed: () {
+                                            if (currentPage <
+                                                images.length - 1) {
+                                              _pageController.nextPage(
+                                                duration: const Duration(
+                                                    milliseconds: 300),
+                                                curve: Curves.easeInOut,
+                                              );
+                                            }
+                                          },
                                         ),
-                                      if (currentPage < images.length - 1)
-                                        Positioned(
-                                          right: -16,
-                                          top: 75,
-                                          child: IconButton(
-                                            icon: Icon(
-                                              Icons.arrow_right,
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .onSurface,
-                                            ),
-                                            iconSize: 32,
-                                            onPressed: () {
-                                              if (currentPage <
-                                                  images.length - 1) {
-                                                _pageController.nextPage(
-                                                  duration: const Duration(
-                                                      milliseconds: 300),
-                                                  curve: Curves.easeInOut,
-                                                );
-                                              }
-                                            },
-                                          ),
-                                        ),
-                                    ],
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                ElevatedButton.icon(
+                                  onPressed: !hasContent
+                                      ? () async {
+                                          await flutterTts
+                                              .speak("No content available");
+                                        }
+                                      : isReading
+                                          ? _stopReading
+                                          : () => _speak(
+                                                convertSpansToPlainText(
+                                                    isSummarized
+                                                        ? summarizedContent
+                                                        : originalContent),
+                                              ),
+                                  icon: Icon(
+                                      isReading ? Icons.stop : Icons.volume_up),
+                                  label: SizedBox(
+                                    width: 80, // Fixed width
+                                    child: Text(
+                                      isReading
+                                          ? "Stop reading"
+                                          : "Read for me",
+                                      textAlign: TextAlign.center,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                SizedBox(
+                                  width: 130,
+                                  child: ElevatedButton(
+                                    onPressed: !hasContent || isReading
+                                        ? null
+                                        : () async {
+                                            if (isSummarized) {
+                                              setState(() {
+                                                isSummarized = false;
+                                              });
+                                            } else {
+                                              summarizedContent =
+                                                  await _summarizeContent(
+                                                      originalContent);
+                                              setState(() {
+                                                isSummarized = true;
+                                              });
+                                            }
+                                          },
+                                    child: Text(isSummarized
+                                        ? "Original"
+                                        : "Summarize"),
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                IconButton(
+                                  iconSize: 28,
+                                  onPressed: _toggleBookmark,
+                                  icon: Icon(
+                                    isSaved
+                                        ? Icons.bookmark_added
+                                        : Icons.bookmark_add_outlined,
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        const SizedBox(height: 16),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                          child: Row(
-                            children: [
-                              ElevatedButton.icon(
-                                onPressed: !hasContent
-                                    ? () async {
-                                        await flutterTts
-                                            .speak("No content available");
-                                      }
-                                    : isReading
-                                        ? _stopReading
-                                        : () => _speak(
-                                              convertSpansToPlainText(
-                                                  isSummarized
-                                                      ? summarizedContent
-                                                      : originalContent),
-                                            ),
-                                icon: Icon(
-                                    isReading ? Icons.stop : Icons.volume_up),
-                                label: SizedBox(
-                                  width: 80,
-                                  child: Text(
-                                    isReading ? "Stop reading" : "Read for me",
-                                    textAlign: TextAlign.center,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              SizedBox(
-                                width: 130,
-                                child: ElevatedButton(
-                                  onPressed: !hasContent || isReading
-                                      ? null
-                                      : () async {
-                                          if (isSummarized) {
-                                            setState(() {
-                                              isSummarized = false;
-                                            });
-                                          } else {
-                                            summarizedContent =
-                                                await _summarizeContent(
-                                                    originalContent);
-                                            setState(() {
-                                              isSummarized = true;
-                                            });
-                                          }
-                                        },
-                                  child: Text(
-                                      isSummarized ? "Original" : "Summarize"),
-                                ),
-                              ),
-                              const SizedBox(width: 5),
-                              IconButton(
-                                iconSize: 28,
-                                onPressed: _toggleBookmark,
-                                icon: Icon(
-                                  isSaved
-                                      ? Icons.bookmark_added
-                                      : Icons.bookmark_add_outlined,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            child: paragraphs.isNotEmpty
-                                ? SelectableText.rich(
-                                    TextSpan(
-                                      children: paragraphs
-                                          .asMap()
-                                          .entries
-                                          .expand((entry) {
-                                        final int index = entry.key;
-                                        final spans = entry.value;
-                                        final isActive =
-                                            index == activeParagraphIndex;
+                            const SizedBox(height: 16),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0, horizontal: 8.0),
+                              child: paragraphs.isNotEmpty
+                                  ? SelectableText.rich(
+                                      TextSpan(
+                                        children: paragraphs
+                                            .asMap()
+                                            .entries
+                                            .expand((entry) {
+                                          final int index =
+                                              entry.key; // Paragraph index
+                                          final List<InlineSpan> spans = entry
+                                              .value; // Spans for the paragraph
+                                          final bool isActive = index ==
+                                              activeParagraphIndex; // Check if active
 
-                                        return [
-                                          TextSpan(
-                                            children: spans,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium
-                                                ?.copyWith(
-                                                  backgroundColor: isActive
-                                                      ? Colors.yellow
-                                                          .withOpacity(0.4)
-                                                      : Colors.transparent,
-                                                ),
-                                          ),
-                                          const TextSpan(text: '\n\n'),
-                                        ];
-                                      }).toList(),
+                                          // Apply background color only to active paragraphs
+                                          return [
+                                            TextSpan(
+                                              children: spans,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium
+                                                  ?.copyWith(
+                                                    backgroundColor: isActive
+                                                        ? Colors.yellow.withOpacity(
+                                                            0.4) // Highlight active paragraph
+                                                        : Colors.transparent,
+                                                  ),
+                                            ),
+                                            const TextSpan(
+                                                text:
+                                                    '\n\n'), // Add spacing between paragraphs
+                                          ];
+                                        }).toList(),
+                                      ),
+                                      showCursor: true,
+                                      cursorColor: Colors.blue,
+                                      enableInteractiveSelection:
+                                          true, // Allow multi-paragraph selection
+                                    )
+                                  : Center(
+                                      child: Text(
+                                        "No content available",
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium,
+                                      ),
                                     ),
-                                    showCursor: true,
-                                    cursorColor: Colors.blue,
-                                    enableInteractiveSelection: true,
-                                  )
-                                : Center(
-                                    child: Text(
-                                      "No content available",
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium,
-                                    ),
-                                  ),
-                          ),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildCreditSection(widget.url, widget.source),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 32.0),
-                          child: _buildCreditSection(widget.url, widget.source),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-              },
+                      ),
+                    );
+                  }
+                },
+              ),
             ),
           ],
         ),
