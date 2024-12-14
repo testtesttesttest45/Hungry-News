@@ -219,6 +219,7 @@ class NewsDetailPage extends StatefulWidget {
   final bool isRead;
   final DateTime originalDatetime;
   final String tableName;
+  final int impactLevel;
 
   const NewsDetailPage({
     super.key,
@@ -230,6 +231,7 @@ class NewsDetailPage extends StatefulWidget {
     required this.isRead,
     required this.originalDatetime,
     required this.tableName,
+    required this.impactLevel,
   });
 
   @override
@@ -258,11 +260,12 @@ class NewsDetailPageState extends State<NewsDetailPage> {
     _pageController = PageController(initialPage: currentPage);
     flutterTts = FlutterTts();
 
-    isSaved = widget.isSaved;
     final compositeKey =
         NewsStateManager.generateCompositeKey(widget.tableName, widget.newsId);
     isRead = NewsStateManager.allReadStatesNotifier.value[compositeKey] ??
         widget.isRead;
+    isSaved = NewsStateManager.allSavedStatesNotifier.value[compositeKey] ??
+        widget.isSaved;
 
     flutterTts.setErrorHandler((msg) {
       setState(() {
@@ -426,6 +429,7 @@ class NewsDetailPageState extends State<NewsDetailPage> {
       'url': widget.url,
       'source': widget.source,
       'is_read': isRead,
+      'impact_level': widget.impactLevel,
     };
 
     // update saved state
@@ -457,7 +461,9 @@ class NewsDetailPageState extends State<NewsDetailPage> {
               delegate: _StickyHeaderDelegate(
                 child: Container(
                   height: 160,
-                  color: Theme.of(context).appBarTheme.backgroundColor,
+                  color: widget.impactLevel == 3
+                    ? Theme.of(context).colorScheme.secondary // ImpactLevel 3
+                    : Theme.of(context).appBarTheme.backgroundColor,
                   padding: const EdgeInsets.only(
                       top: 40.0, left: 16.0, right: 16.0, bottom: 16.0),
                   child: Column(
@@ -469,7 +475,9 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.secondary,
+                              color: widget.impactLevel == 3
+                                ? Theme.of(context).colorScheme.primary // ImpactLevel 3
+                                : Theme.of(context).colorScheme.secondary,
                             ),
                         textAlign: TextAlign.left,
                         maxLines: 4,

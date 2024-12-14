@@ -209,6 +209,7 @@ class PastNewsPageState extends State<PastNewsPage> {
                     isRead: isReadGlobal,
                     originalDatetime: newsDateTime,
                     tableName: news['table_name'],
+                    impactLevel: news['impact_level'],
                   ),
                 ),
               );
@@ -241,7 +242,7 @@ class PastNewsPageState extends State<PastNewsPage> {
                           style: Theme.of(context)
                               .textTheme
                               .bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                              ?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -356,7 +357,7 @@ class PastNewsPageState extends State<PastNewsPage> {
                 delegate: _StickyHeaderDelegate(
                   child: Container(
                     height: 160,
-                    color: Theme.of(context).appBarTheme.backgroundColor,
+                    color: Theme.of(context).colorScheme.secondary,
                     padding: const EdgeInsets.only(
                       top: 40.0,
                       left: 16.0,
@@ -374,7 +375,7 @@ class PastNewsPageState extends State<PastNewsPage> {
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.secondary,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                             ),
                             const SizedBox(height: 10),

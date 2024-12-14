@@ -210,6 +210,7 @@ class CuratedNewsPageState extends State<CuratedNewsPage> {
                     isRead: isReadGlobal,
                     originalDatetime: newsDateTime,
                     tableName: news['table_name'],
+                    impactLevel: news['impact_level'],
                   ),
                 ),
               );

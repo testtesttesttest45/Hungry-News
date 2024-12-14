@@ -19,6 +19,8 @@ class SearchNewsPageState extends State<SearchNewsPage> {
   String errorMessage = '';
   bool hasSearched = false;
   static bool isReversed = false;
+  final GlobalKey<NewsDetailPageState> newsDetailPageKey =
+      GlobalKey<NewsDetailPageState>();
 
   Future<void> _performSearch() async {
     setState(() {
@@ -39,7 +41,8 @@ class SearchNewsPageState extends State<SearchNewsPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('https://hungrynews-backend.onrender.com/search-news?query=$query'),
+        Uri.parse(
+            'https://hungrynews-backend.onrender.com/search-news?query=$query'),
       );
 
       if (response.statusCode == 200) {
@@ -96,10 +99,11 @@ class SearchNewsPageState extends State<SearchNewsPage> {
   void _updateSearchResults() {
     setState(() {
       for (var news in searchResults) {
-        final compositeKey =
-            NewsStateManager.generateCompositeKey(news['table_name'], news['news_id']);
+        final compositeKey = NewsStateManager.generateCompositeKey(
+            news['table_name'], news['news_id']);
         news['is_saved'] =
-            NewsStateManager.allSavedStatesNotifier.value[compositeKey] ?? false;
+            NewsStateManager.allSavedStatesNotifier.value[compositeKey] ??
+                false;
       }
     });
   }
@@ -167,6 +171,7 @@ class SearchNewsPageState extends State<SearchNewsPage> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => NewsDetailPage(
+                    key: newsDetailPageKey,
                     title: news['title'],
                     url: news['url'],
                     source: news['source'],
@@ -175,12 +180,23 @@ class SearchNewsPageState extends State<SearchNewsPage> {
                     isRead: news['is_read'] ?? false,
                     originalDatetime: newsDateTime,
                     tableName: news['table_name'],
+                    impactLevel: news['impact_level']
                   ),
                 ),
               );
 
               if (updatedData != null) {
-                _updateSearchResults();
+                final updatedIsSaved = updatedData['is_saved'] ?? false;
+
+                setState(() {
+                  // Update the specific news item's `is_saved` state in the searchResults list
+                  final index = searchResults.indexWhere((n) =>
+                      n['news_id'] == news['news_id'] &&
+                      n['table_name'] == news['table_name']);
+                  if (index != -1) {
+                    searchResults[index]['is_saved'] = updatedIsSaved;
+                  }
+                });
               }
             },
             child: Container(
@@ -239,7 +255,8 @@ class SearchNewsPageState extends State<SearchNewsPage> {
 
   @override
   void dispose() {
-    NewsStateManager.allSavedStatesNotifier.removeListener(_updateSearchResults);
+    NewsStateManager.allSavedStatesNotifier
+        .removeListener(_updateSearchResults);
     super.dispose();
   }
 

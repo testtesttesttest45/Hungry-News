@@ -100,6 +100,7 @@ class SavedNewsPageState extends State<SavedNewsPage> {
       final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(datetime);
 
       final isRead = news['is_read'] ?? false;
+      final impactLevel = news['impact_level'];
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,6 +119,7 @@ class SavedNewsPageState extends State<SavedNewsPage> {
                     isRead: isRead,
                     originalDatetime: datetime,
                     tableName: news['table_name'],
+                    impactLevel: news['impact_level'],
                   ),
                 ),
               );
@@ -173,10 +175,12 @@ class SavedNewsPageState extends State<SavedNewsPage> {
                       children: [
                         Text(
                           title,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: impactLevel == 3
+                                  ? Theme.of(context).colorScheme.secondary
+                                  : null, // Apply secondary color if impactLevel is 3
+                            ),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),

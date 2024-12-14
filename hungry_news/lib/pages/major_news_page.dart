@@ -198,6 +198,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
       String source = news['source'];
       bool isSaved = news['is_saved'] == true;
       int newsId = news['news_id'];
+      int impactLevel = news['impact_level'];
       final isReadGlobal =
           NewsStateManager.allReadStatesNotifier.value[news['news_id']] ??
               false;
@@ -220,6 +221,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                     isRead: isReadGlobal,
                     originalDatetime: newsDateTime,
                     tableName: news['table_name'],
+                    impactLevel: impactLevel,
                   ),
                 ),
               );
@@ -263,7 +265,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                           style: Theme.of(context)
                               .textTheme
                               .bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                              ?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -316,7 +318,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                 delegate: _StickyHeaderDelegate(
                   child: Container(
                     height: 160,
-                    color: Theme.of(context).appBarTheme.backgroundColor,
+                    color: Theme.of(context).colorScheme.secondary,
                     padding: const EdgeInsets.only(
                         top: 40.0, left: 16.0, right: 16.0, bottom: 16.0),
                     child: Stack(
@@ -330,7 +332,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.secondary,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                             ),
                             const SizedBox(height: 10),

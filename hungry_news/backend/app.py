@@ -53,7 +53,7 @@ def get_news():
                 return jsonify({"error": "Please wait while I generate this week's database"}), 503
             
             # see current week's table
-            cursor.execute(f"SELECT news_id, title, url, datetime, source FROM `{table_name}` WHERE impact_level = 3")
+            cursor.execute(f"SELECT news_id, title, url, datetime, source, impact_level FROM `{table_name}` WHERE impact_level = 3")
             results = cursor.fetchall()
     except pymysql.MySQLError as e:
         return jsonify({"error": f"Database error: {str(e)}"}), 500
@@ -85,7 +85,7 @@ def get_past_news():
                 return jsonify({"error": "Table does not exist"}), 404
             
             # see current week's table
-            cursor.execute(f"SELECT news_id, title, url, datetime, source FROM `{table_name}` where impact_level = 3")
+            cursor.execute(f"SELECT news_id, title, url, datetime, source, impact_level FROM `{table_name}` where impact_level = 3")
             results = cursor.fetchall()
     except pymysql.MySQLError as e:
         return jsonify({"error": f"Database error: {str(e)}"}), 500
@@ -157,7 +157,7 @@ def search_news():
                 # ensure only tables with this format
                 if re.match(r'\d{6}-\d{6}', table_name):
                     cursor.execute(
-                        f"SELECT news_id, title, url, datetime, source FROM `{table_name}` "
+                        f"SELECT news_id, title, url, datetime, source, impact_level FROM `{table_name}` "
                         f"WHERE title LIKE %s", (f"%{query}%",)
                     )
                     results.extend([{
