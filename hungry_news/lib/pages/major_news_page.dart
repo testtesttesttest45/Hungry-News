@@ -35,6 +35,8 @@ class MajorNewsPageState extends State<MajorNewsPage> {
   final GlobalKey<NewsDetailPageState> newsDetailPageKey =
       GlobalKey<NewsDetailPageState>();
 
+  final ValueNotifier<int> unreadNewsCount = ValueNotifier<int>(0);
+
   @override
   void initState() {
     super.initState();
@@ -51,6 +53,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
 
   @override
   void dispose() {
+    unreadNewsCount.dispose();
     NewsStateManager.allSavedStatesNotifier
         .removeListener(_onSavedStateUpdated);
     NewsStateManager.allReadStatesNotifier.removeListener(_onReadStateUpdated);
@@ -124,6 +127,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
               return isReversed ? -comparison : comparison;
             });
           isLoading = false;
+          NewsStateManager.initializeUnreadCount(newsData);
         });
       } else if (response.statusCode == 503) {
         setState(() {
@@ -138,6 +142,15 @@ class MajorNewsPageState extends State<MajorNewsPage> {
         isLoading = false;
         errorMessage = e.toString(); // Store the error message
       });
+    }
+  }
+
+  void decrementUnreadNewsCount() {
+    if (unreadNewsCount.value > 0) {
+      unreadNewsCount.value--;
+      print("Unread count decremented: ${unreadNewsCount.value}");
+    } else {
+      print("Unread count is already 0");
     }
   }
 
@@ -222,6 +235,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                     originalDatetime: newsDateTime,
                     tableName: news['table_name'],
                     impactLevel: impactLevel,
+                    decrementUnreadCount: decrementUnreadNewsCount,
                   ),
                 ),
               );
@@ -265,7 +279,9 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                           style: Theme.of(context)
                               .textTheme
                               .bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
+                              ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.primary),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),

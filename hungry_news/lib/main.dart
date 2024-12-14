@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:badges/badges.dart' as badges;
 
 import 'pages/curated_news_page.dart';
 import 'pages/past_news_page.dart';
@@ -9,6 +10,8 @@ import 'pages/major_news_page.dart';
 import 'pages/saved_news_page.dart';
 import 'pages/search_page.dart';
 import 'pages/settings_page.dart';
+
+import 'utils/utility.dart';
 
 void main() {
   tz.initializeTimeZones();
@@ -145,6 +148,29 @@ class _MyHomePageState extends State<MyHomePage> {
 
   GlobalKey<SearchNewsPageState> _searchNewsPageKey = GlobalKey();
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _majorNewsPageKey.currentState?.unreadNewsCount
+          .addListener(_updateUnreadNewsCount);
+    });
+  }
+
+  @override
+  void dispose() {
+    _majorNewsPageKey.currentState?.unreadNewsCount
+        .removeListener(_updateUnreadNewsCount);
+    super.dispose();
+  }
+
+  void _updateUnreadNewsCount() {
+    if (_majorNewsPageKey.currentState != null) {
+      setState(() {
+      });
+    }
+  }
+
   List<Widget> _pages(BuildContext context) => [
         CuratedNewsPage(key: _curatedNewsPageKey),
         // PastNewsPage(testDate: DateTime(2024, 11, 10)),
@@ -180,7 +206,7 @@ class _MyHomePageState extends State<MyHomePage> {
     if (_curatedNewsPageKey.currentState != null) {
       _curatedNewsPageKey.currentState!.refreshPage();
     }
-    
+
     _searchNewsPageKey = GlobalKey<SearchNewsPageState>();
   }
 
@@ -196,16 +222,32 @@ class _MyHomePageState extends State<MyHomePage> {
         children: _pages(context),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
+        items: <BottomNavigationBarItem>[
+          const BottomNavigationBarItem(
               icon: Icon(Icons.local_library), label: 'Curated News'),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
               icon: Icon(Icons.history), label: 'Past News'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.public), label: 'Major News'),
-          BottomNavigationBarItem(icon: Icon(Icons.save), label: 'Saved News'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-          BottomNavigationBarItem(
+            icon: ValueListenableBuilder<int>(
+              valueListenable: NewsStateManager.unreadMajorNewsCount,
+              builder: (context, unreadCount, _) {
+                return badges.Badge(
+                  badgeContent: Text(
+                    '$unreadCount',
+                    style: const TextStyle(color: Colors.white, fontSize: 10),
+                  ),
+                  showBadge: unreadCount > 0,
+                  child: const Icon(Icons.public),
+                );
+              },
+            ),
+            label: 'Major News',
+          ),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.save), label: 'Saved News'),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.search), label: 'Search'),
+          const BottomNavigationBarItem(
               icon: Icon(Icons.settings), label: 'Settings'),
         ],
         currentIndex: _selectedIndex,
@@ -216,5 +258,4 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
-
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'news_detail_page.dart';
+import 'major_news_page.dart';
 import '../utils/utility.dart';
 
 class SavedNewsPage extends StatefulWidget {
@@ -76,6 +77,14 @@ class SavedNewsPageState extends State<SavedNewsPage> {
     });
   }
 
+  void notifyMajorNewsPage() {
+    final majorNewsPageState =
+        context.findAncestorStateOfType<MajorNewsPageState>();
+    if (majorNewsPageState != null) {
+      majorNewsPageState.decrementUnreadNewsCount();
+    }
+  }
+
   List<Widget> generateSavedNewsItems(
       List<Map<String, dynamic>> savedNewsData) {
     if (savedNewsData.isEmpty) {
@@ -120,6 +129,7 @@ class SavedNewsPageState extends State<SavedNewsPage> {
                     originalDatetime: datetime,
                     tableName: news['table_name'],
                     impactLevel: news['impact_level'],
+                    decrementUnreadCount: notifyMajorNewsPage, 
                   ),
                 ),
               );
@@ -175,12 +185,15 @@ class SavedNewsPageState extends State<SavedNewsPage> {
                       children: [
                         Text(
                           title,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: impactLevel == 3
-                                  ? Theme.of(context).colorScheme.secondary
-                                  : null, // Apply secondary color if impactLevel is 3
-                            ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: impactLevel == 3
+                                    ? Theme.of(context).colorScheme.secondary
+                                    : null, // Apply secondary color if impactLevel is 3
+                              ),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),

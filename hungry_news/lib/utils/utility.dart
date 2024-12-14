@@ -14,6 +14,19 @@ class NewsStateManager {
   static const String _savedNewsListKey = 'savedNews';
   static const String _isReadKey = 'isRead_';
 
+  static final ValueNotifier<int> unreadMajorNewsCount = ValueNotifier<int>(0);
+
+  static void initializeUnreadCount(List<dynamic> majorNewsData) {
+    final unreadCount = majorNewsData.where((news) => !(news['is_read'] ?? false)).length;
+    unreadMajorNewsCount.value = unreadCount;
+  }
+
+  static void decrementUnreadCount() {
+    if (unreadMajorNewsCount.value > 0) {
+      unreadMajorNewsCount.value--;
+    }
+  }
+
   // create a composite key for a specific table and news ID
   static String generateCompositeKey(String tableName, int newsId) {
     return '$tableName|$newsId';

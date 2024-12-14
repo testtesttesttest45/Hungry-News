@@ -220,6 +220,7 @@ class NewsDetailPage extends StatefulWidget {
   final DateTime originalDatetime;
   final String tableName;
   final int impactLevel;
+  final Function? decrementUnreadCount;
 
   const NewsDetailPage({
     super.key,
@@ -232,6 +233,7 @@ class NewsDetailPage extends StatefulWidget {
     required this.originalDatetime,
     required this.tableName,
     required this.impactLevel,
+    this.decrementUnreadCount,
   });
 
   @override
@@ -462,8 +464,8 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                 child: Container(
                   height: 160,
                   color: widget.impactLevel == 3
-                    ? Theme.of(context).colorScheme.secondary // ImpactLevel 3
-                    : Theme.of(context).appBarTheme.backgroundColor,
+                      ? Theme.of(context).colorScheme.secondary // ImpactLevel 3
+                      : Theme.of(context).appBarTheme.backgroundColor,
                   padding: const EdgeInsets.only(
                       top: 40.0, left: 16.0, right: 16.0, bottom: 16.0),
                   child: Column(
@@ -476,8 +478,10 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: widget.impactLevel == 3
-                                ? Theme.of(context).colorScheme.primary // ImpactLevel 3
-                                : Theme.of(context).colorScheme.secondary,
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .primary // ImpactLevel 3
+                                  : Theme.of(context).colorScheme.secondary,
                             ),
                         textAlign: TextAlign.left,
                         maxLines: 4,
@@ -817,8 +821,11 @@ class NewsDetailPageState extends State<NewsDetailPage> {
         isRead = true;
       });
 
-      // here we update the read state globally
+      // Update the read state globally
       await NewsStateManager.setIsRead(widget.tableName, widget.newsId, true);
+
+      // Decrement unread count globally
+      NewsStateManager.decrementUnreadCount();
     }
 
     return Padding(
