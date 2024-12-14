@@ -83,7 +83,7 @@ class SavedNewsPageState extends State<SavedNewsPage> {
         const SizedBox(height: 100),
         Center(
           child: Text(
-            "No saved news yet! Stay tuned!",
+            "No saved news yet!",
             style: Theme.of(context).textTheme.bodyLarge,
           ),
         )

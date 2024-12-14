@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import requests  # To fetch external content
 from pytz import timezone
+import re
+
 
 app = Flask(__name__)
 load_dotenv()
@@ -121,6 +123,51 @@ def get_curated_news():
             """
             cursor.execute(query)
             results = cursor.fetchall()
+    except pymysql.MySQLError as e:
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
+    finally:
+        conn.close()
+
+    return jsonify(results)
+
+@app.route('/search-news', methods=['GET'])
+def search_news():
+    config = {
+        'user': os.getenv('DB_USER'),
+        'password': os.getenv('DB_PASSWORD'),
+        'host': os.getenv('DB_HOST'),
+        'database': os.getenv('DB_NAME'),
+        'cursorclass': pymysql.cursors.DictCursor
+    }
+
+    query = request.args.get('query')
+    if not query:
+        return jsonify({"error": "Missing search query"}), 400
+
+    conn = pymysql.connect(**config)
+    try:
+        with conn.cursor() as cursor:
+            # fetch all table names
+            cursor.execute("SHOW TABLES;")
+            tables = cursor.fetchall()
+
+            results = []
+            for table in tables:
+                table_name = list(table.values())[0]
+                # ensure only tables with this format
+                if re.match(r'\d{6}-\d{6}', table_name):
+                    cursor.execute(
+                        f"SELECT news_id, title, url, datetime, source FROM `{table_name}` "
+                        f"WHERE title LIKE %s", (f"%{query}%",)
+                    )
+                    results.extend([{
+                        **row,
+                        "table_name": table_name
+                    } for row in cursor.fetchall()])
+
+            # sort by datetime in descending order
+            results.sort(key=lambda x: x['datetime'], reverse=True)
+
     except pymysql.MySQLError as e:
         return jsonify({"error": f"Database error: {str(e)}"}), 500
     finally:

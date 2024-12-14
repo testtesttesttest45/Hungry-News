@@ -125,7 +125,7 @@ List<InlineSpan> _extractTextAndLinks(
       throw StateError("Base URL lacks a scheme: $baseUrl");
     }
   } catch (e) {
-    print("Invalid base URL: $baseUrl. Error: $e");
+    debugPrint("Invalid base URL: $baseUrl. Error: $e");
     baseUri = null;
   }
 
@@ -174,7 +174,7 @@ List<InlineSpan> _extractTextAndLinks(
                 try {
                   launchUrl(Uri.parse(link));
                 } catch (e) {
-                  print("Failed to launch URL: $link. Error: $e");
+                  debugPrint("Failed to launch URL: $link. Error: $e");
                 }
               },
           ),

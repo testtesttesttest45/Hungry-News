@@ -142,6 +142,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final GlobalKey<SavedNewsPageState> _savedNewsPageKey = GlobalKey();
   final GlobalKey<PastNewsPageState> _pastNewsPageKey = GlobalKey();
   final GlobalKey<CuratedNewsPageState> _curatedNewsPageKey = GlobalKey();
+  final GlobalKey<CuratedNewsPageState> _searchNewsPageKey = GlobalKey();
 
   List<Widget> _pages(BuildContext context) => [
         CuratedNewsPage(key: _curatedNewsPageKey),
@@ -149,7 +150,7 @@ class _MyHomePageState extends State<MyHomePage> {
         PastNewsPage(key: _pastNewsPageKey),
         MajorNewsPage(key: _majorNewsPageKey),
         SavedNewsPage(key: _savedNewsPageKey),
-        const SearchNewsPage(),
+        SearchNewsPage(key: _searchNewsPageKey),
         SettingsPage(
           onThemeChanged: widget.onThemeChanged, //  callback to SettingsPage
           onResetApp: _resetAppCallback, // Pass reset callback
