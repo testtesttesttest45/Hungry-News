@@ -142,7 +142,8 @@ class _MyHomePageState extends State<MyHomePage> {
   final GlobalKey<SavedNewsPageState> _savedNewsPageKey = GlobalKey();
   final GlobalKey<PastNewsPageState> _pastNewsPageKey = GlobalKey();
   final GlobalKey<CuratedNewsPageState> _curatedNewsPageKey = GlobalKey();
-  final GlobalKey<CuratedNewsPageState> _searchNewsPageKey = GlobalKey();
+
+  GlobalKey<SearchNewsPageState> _searchNewsPageKey = GlobalKey();
 
   List<Widget> _pages(BuildContext context) => [
         CuratedNewsPage(key: _curatedNewsPageKey),
@@ -179,6 +180,8 @@ class _MyHomePageState extends State<MyHomePage> {
     if (_curatedNewsPageKey.currentState != null) {
       _curatedNewsPageKey.currentState!.refreshPage();
     }
+    
+    _searchNewsPageKey = GlobalKey<SearchNewsPageState>();
   }
 
   @override

@@ -260,6 +260,17 @@ class SearchNewsPageState extends State<SearchNewsPage> {
     super.dispose();
   }
 
+  void refreshPage() {
+    setState(() {
+      _searchController.clear(); // Clear the search bar
+      searchResults = []; // Clear search results
+      isLoading = false;
+      errorMessage = '';
+      hasSearched = false;
+      isReversed = false; // Reset reversed state
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
