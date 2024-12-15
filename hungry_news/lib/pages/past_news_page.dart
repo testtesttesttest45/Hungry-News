@@ -434,7 +434,7 @@ class PastNewsPageState extends State<PastNewsPage> {
                           child: Container(
                             decoration: BoxDecoration(
                               color: isReversed
-                                  ? Theme.of(context).colorScheme.secondary
+                                  ? Theme.of(context).colorScheme.primary
                                   : Colors.transparent,
                               shape: BoxShape.circle,
                             ),

@@ -389,7 +389,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                           child: Container(
                             decoration: BoxDecoration(
                               color: isReversed
-                                  ? Theme.of(context).colorScheme.secondary
+                                  ? Theme.of(context).colorScheme.primary
                                   : Colors.transparent,
                               shape: BoxShape.circle,
                             ),

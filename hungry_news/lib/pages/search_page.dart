@@ -163,6 +163,7 @@ class SearchNewsPageState extends State<SearchNewsPage> {
     resultWidgets.addAll(searchResults.map((news) {
       String title = news['title'];
       DateTime newsDateTime = DateTime.parse(news['datetime']);
+      final impactLevel = news['impact_level'];
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,12 +213,17 @@ class SearchNewsPageState extends State<SearchNewsPage> {
                       children: [
                         Text(
                           title,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
                           style: Theme.of(context)
                               .textTheme
                               .bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: impactLevel == 3
+                                    ? Theme.of(context).colorScheme.secondary
+                                    : null, // Apply secondary color if impactLevel is 3
+                              ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 5),
                         Text(
