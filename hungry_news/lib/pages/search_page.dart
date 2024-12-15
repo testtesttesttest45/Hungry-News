@@ -115,15 +115,17 @@ class SearchNewsPageState extends State<SearchNewsPage> {
 
     if (errorMessage.isNotEmpty) {
       return [
+        const SizedBox(height: 100),
         Center(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 16.0),
-            child: Text(
-              errorMessage,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+          child: Text(
+            errorMessage,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: Theme.of(context).colorScheme.error),
+            textAlign: TextAlign.center,
           ),
-        ),
+        )
       ];
     }
 
@@ -171,17 +173,16 @@ class SearchNewsPageState extends State<SearchNewsPage> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => NewsDetailPage(
-                    key: newsDetailPageKey,
-                    title: news['title'],
-                    url: news['url'],
-                    source: news['source'],
-                    isSaved: news['is_saved'] ?? false,
-                    newsId: news['news_id'],
-                    isRead: news['is_read'] ?? false,
-                    originalDatetime: newsDateTime,
-                    tableName: news['table_name'],
-                    impactLevel: news['impact_level']
-                  ),
+                      key: newsDetailPageKey,
+                      title: news['title'],
+                      url: news['url'],
+                      source: news['source'],
+                      isSaved: news['is_saved'] ?? false,
+                      newsId: news['news_id'],
+                      isRead: news['is_read'] ?? false,
+                      originalDatetime: newsDateTime,
+                      tableName: news['table_name'],
+                      impactLevel: news['impact_level']),
                 ),
               );
 

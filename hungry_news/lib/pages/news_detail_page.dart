@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
@@ -82,27 +85,62 @@ Future<Map<String, dynamic>> fetchArticleContent(
         "content": paragraphs,
         "images": images,
       };
+    } else if (response.statusCode == 404) {
+      return {
+        "content": [
+          [
+            const TextSpan(
+              text: "The requested article could not be found.",
+              style: TextStyle(color: Colors.red),
+            )
+          ]
+        ],
+        "images": []
+      };
     } else {
       return {
         "content": [
           [
-            TextSpan(
-              text:
-                  "Failed to load content. Status code: ${response.statusCode}",
-              style: const TextStyle(color: Colors.red),
+            const TextSpan(
+              text: "Failed to load content. Please try again later.",
+              style: TextStyle(color: Colors.red),
             )
           ]
         ],
         "images": []
       };
     }
+  } on SocketException {
+    return {
+      "content": [
+        [
+          const TextSpan(
+            text: "No internet connection. Please check your connection and try again.",
+            style: TextStyle(color: Colors.red),
+          )
+        ]
+      ],
+      "images": []
+    };
+  } on TimeoutException {
+    return {
+      "content": [
+        [
+          const TextSpan(
+            text: "The request timed out. Please try again later.",
+            style: TextStyle(color: Colors.red),
+          )
+        ]
+      ],
+      "images": []
+    };
   } catch (e) {
     return {
       "content": [
         [
-          TextSpan(
-            text: "An error occurred while fetching content: $e",
-            style: const TextStyle(color: Colors.red),
+          const TextSpan(
+            text: "An unexpected error occurred. Please try again later.",
+            style: TextStyle(color: Colors.red),
           )
         ]
       ],

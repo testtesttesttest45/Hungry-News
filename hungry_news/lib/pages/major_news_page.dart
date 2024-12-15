@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../utils/utility.dart';
@@ -137,10 +139,16 @@ class MajorNewsPageState extends State<MajorNewsPage> {
       } else {
         throw Exception('Failed to load news');
       }
+    } on SocketException {
+      setState(() {
+        isLoading = false;
+        errorMessage =
+            "Unable to connect to the server. Please check your internet connection and try again.";
+      });
     } catch (e) {
       setState(() {
         isLoading = false;
-        errorMessage = e.toString(); // Store the error message
+        errorMessage = "An unexpected error occurred. Please try again later.";
       });
     }
   }
@@ -181,7 +189,9 @@ class MajorNewsPageState extends State<MajorNewsPage> {
         Center(
           child: Text(
             errorMessage,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error),
+            textAlign:
+                  TextAlign.center,
           ),
         )
       ];

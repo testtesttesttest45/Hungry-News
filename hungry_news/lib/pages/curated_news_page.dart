@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
@@ -87,6 +89,7 @@ class CuratedNewsPageState extends State<CuratedNewsPage> {
     });
 
     String tableName = getTableNameForWeek(currentDate);
+
     try {
       final response = await http.get(Uri.parse(
           'https://hungrynews-backend.onrender.com/curated-news?table_name=$tableName'));
@@ -108,23 +111,34 @@ class CuratedNewsPageState extends State<CuratedNewsPage> {
             ..sort((a, b) {
               int comparison = parseNewsDate(b['datetime'])
                   .compareTo(parseNewsDate(a['datetime']));
-              // return comparison;
               return isReversed ? -comparison : comparison;
             });
           isLoading = false;
         });
+      } else if (response.statusCode == 400) {
+        setState(() {
+          errorMessage = "Table name is missing in the request.";
+          isLoading = false;
+        });
       } else if (response.statusCode == 404) {
         setState(() {
-          errorMessage = "No news available for the selected week.";
+          errorMessage = "No curated news available for the selected week.";
           isLoading = false;
         });
       } else {
-        throw Exception("Failed to fetch news");
+        throw Exception("Failed to fetch curated news");
       }
+    } on SocketException {
+      setState(() {
+        isLoading = false;
+        errorMessage =
+            "Unable to connect to the server. Please check your internet connection and try again.";
+      });
     } catch (e) {
       setState(() {
-        errorMessage = e.toString();
         isLoading = false;
+        errorMessage =
+            "An unexpected error occurred while fetching curated news. Please try again later.";
       });
     }
   }
@@ -155,7 +169,9 @@ class CuratedNewsPageState extends State<CuratedNewsPage> {
         Center(
           child: Text(
             errorMessage,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error),
+            textAlign:
+                  TextAlign.center,
           ),
         )
       ];
