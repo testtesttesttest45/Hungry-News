@@ -77,11 +77,13 @@ class SavedNewsPageState extends State<SavedNewsPage> {
     });
   }
 
-  void notifyMajorNewsPage() {
-    final majorNewsPageState =
-        context.findAncestorStateOfType<MajorNewsPageState>();
-    if (majorNewsPageState != null) {
-      majorNewsPageState.decrementUnreadNewsCount();
+  void notifyMajorNewsPage(String tableName, int impactLevel) {
+    if (impactLevel == 3 && NewsStateManager.isNewsFromCurrentWeek(tableName)) {
+      final majorNewsPageState =
+          context.findAncestorStateOfType<MajorNewsPageState>();
+      if (majorNewsPageState != null) {
+        majorNewsPageState.decrementUnreadNewsCount(tableName, impactLevel);
+      }
     }
   }
 
@@ -129,7 +131,8 @@ class SavedNewsPageState extends State<SavedNewsPage> {
                     originalDatetime: datetime,
                     tableName: news['table_name'],
                     impactLevel: news['impact_level'],
-                    decrementUnreadCount: notifyMajorNewsPage, 
+                    decrementUnreadCount: (tableName, level) =>
+                        notifyMajorNewsPage(tableName, level),
                   ),
                 ),
               );

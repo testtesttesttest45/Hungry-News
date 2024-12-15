@@ -33,9 +33,15 @@ class NewsStateManager {
     unreadMajorNewsCount.value = unreadCount;
   }
 
-  static void decrementUnreadCount(String tableName) {
-    if (isNewsFromCurrentWeek(tableName) && unreadMajorNewsCount.value > 0) {
+  static void decrementUnreadCount(String tableName, int impactLevel) {
+    if (impactLevel == 3 &&
+        isNewsFromCurrentWeek(tableName) &&
+        unreadMajorNewsCount.value > 0) {
       unreadMajorNewsCount.value--;
+      debugPrint(
+          "Unread count decremented. New count: ${unreadMajorNewsCount.value}");
+    } else {
+      debugPrint("Unread count not decremented. Conditions not met.");
     }
   }
 

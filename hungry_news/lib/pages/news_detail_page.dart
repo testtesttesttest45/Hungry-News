@@ -515,7 +515,7 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                             size: 32),
                         color: widget.impactLevel == 3
                             ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).appBarTheme.backgroundColor,
+                            : Theme.of(context).colorScheme.secondary,
                         onPressed: () {
                           Navigator.pop(context, {
                             'is_saved': isSaved,
@@ -899,10 +899,12 @@ class NewsDetailPageState extends State<NewsDetailPage> {
         isRead = true;
       });
 
+      // update the read state globally
       await NewsStateManager.setIsRead(widget.tableName, widget.newsId, true);
 
-      // Validate if the news belongs to the current Major News week
-      NewsStateManager.decrementUnreadCount(widget.tableName);
+      // decrement unread count if it meets conditions
+      NewsStateManager.decrementUnreadCount(
+          widget.tableName, widget.impactLevel);
     }
 
     return Padding(

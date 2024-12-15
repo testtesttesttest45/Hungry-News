@@ -153,13 +153,8 @@ class MajorNewsPageState extends State<MajorNewsPage> {
     }
   }
 
-  void decrementUnreadNewsCount() {
-    if (unreadNewsCount.value > 0) {
-      unreadNewsCount.value--;
-      debugPrint("Unread count decremented: ${unreadNewsCount.value}");
-    } else {
-      debugPrint("Unread count is already 0");
-    }
+  void decrementUnreadNewsCount(String tableName, int impactLevel) {
+    NewsStateManager.decrementUnreadCount(tableName, impactLevel);
   }
 
   String getWeekTableName(DateTime date) {
@@ -189,9 +184,11 @@ class MajorNewsPageState extends State<MajorNewsPage> {
         Center(
           child: Text(
             errorMessage,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error),
-            textAlign:
-                  TextAlign.center,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: Theme.of(context).colorScheme.error),
+            textAlign: TextAlign.center,
           ),
         )
       ];
@@ -245,7 +242,8 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                     originalDatetime: newsDateTime,
                     tableName: news['table_name'],
                     impactLevel: impactLevel,
-                    decrementUnreadCount: decrementUnreadNewsCount,
+                    decrementUnreadCount: (tableName, level) =>
+                        decrementUnreadNewsCount(tableName, level),
                   ),
                 ),
               );
