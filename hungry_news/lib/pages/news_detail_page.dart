@@ -210,11 +210,22 @@ List<InlineSpan> _extractTextAndLinks(
             ),
             recognizer: TapGestureRecognizer()
               ..onTap = () {
-                try {
-                  launchUrl(Uri.parse(link));
-                } catch (e) {
-                  debugPrint("Failed to launch URL: $link. Error: $e");
-                }
+                final theme = Theme.of(context);
+
+                launchUrl(
+                  Uri.parse(link),
+                  customTabsOptions: CustomTabsOptions(
+                    colorSchemes: CustomTabsColorSchemes.defaults(
+                      toolbarColor: theme.colorScheme.surface,
+                    ),
+                    shareState: CustomTabsShareState.on,
+                    urlBarHidingEnabled: true,
+                    showTitle: true,
+                    closeButton: CustomTabsCloseButton(
+                      icon: CustomTabsCloseButtonIcons.back,
+                    ),
+                  ),
+                );
               },
           ),
         );
@@ -658,7 +669,7 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                                       ),
                                       if (currentPage > 0)
                                         Positioned(
-                                          left: -16,
+                                          left: -20,
                                           top: 75,
                                           child: IconButton(
                                             icon: Icon(
@@ -681,7 +692,7 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                                         ),
                                       if (currentPage < images.length - 1)
                                         Positioned(
-                                          right: -16,
+                                          right: -20,
                                           top: 75,
                                           child: IconButton(
                                             icon: Icon(

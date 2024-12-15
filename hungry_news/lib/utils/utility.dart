@@ -38,10 +38,8 @@ class NewsStateManager {
         isNewsFromCurrentWeek(tableName) &&
         unreadMajorNewsCount.value > 0) {
       unreadMajorNewsCount.value--;
-      debugPrint(
-          "Unread count decremented. New count: ${unreadMajorNewsCount.value}");
     } else {
-      debugPrint("Unread count not decremented. Conditions not met.");
+      debugPrint("Unread count not decremented (conditions not met.)");
     }
   }
 
