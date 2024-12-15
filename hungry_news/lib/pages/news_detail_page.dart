@@ -467,23 +467,41 @@ class NewsDetailPageState extends State<NewsDetailPage> {
                       ? Theme.of(context).colorScheme.secondary
                       : Theme.of(context).appBarTheme.backgroundColor,
                   padding: const EdgeInsets.only(
-                      top: 40.0, left: 16.0, right: 16.0, bottom: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                      top: 40.0, left: 2.0, right: 16.0, bottom: 16.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 10),
-                      Text(
-                        widget.title,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: widget.impactLevel == 3
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(context).colorScheme.secondary,
-                            ),
-                        textAlign: TextAlign.left,
-                        maxLines: 4,
-                        overflow: TextOverflow.ellipsis,
+                      IconButton(
+                        icon: const Icon(Icons.arrow_circle_left_rounded,
+                            size: 32),
+                        color: widget.impactLevel == 3
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).appBarTheme.backgroundColor,
+                        onPressed: () {
+                          Navigator.pop(context, {
+                            'is_saved': isSaved,
+                            'is_read': isRead,
+                          });
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          widget.title,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyLarge
+                              ?.copyWith(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: widget.impactLevel == 3
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context).colorScheme.secondary,
+                              ),
+                          textAlign: TextAlign.left,
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
