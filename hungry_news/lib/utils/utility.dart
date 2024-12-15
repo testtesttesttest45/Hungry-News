@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -17,14 +18,35 @@ class NewsStateManager {
   static final ValueNotifier<int> unreadMajorNewsCount = ValueNotifier<int>(0);
 
   static void initializeUnreadCount(List<dynamic> majorNewsData) {
-    final unreadCount = majorNewsData.where((news) => !(news['is_read'] ?? false)).length;
+    final now = DateTime.now();
+    final monday = now.subtract(Duration(days: now.weekday - 1));
+    final sunday = monday.add(const Duration(days: 6));
+    final currentWeekTable =
+        '${DateFormat('ddMMyy').format(monday)}-${DateFormat('ddMMyy').format(sunday)}';
+
+    final unreadCount = majorNewsData.where((news) {
+      final tableName = news['table_name'];
+      final isUnread = !(news['is_read'] ?? false);
+      return isUnread && tableName == currentWeekTable;
+    }).length;
+
     unreadMajorNewsCount.value = unreadCount;
   }
 
-  static void decrementUnreadCount() {
-    if (unreadMajorNewsCount.value > 0) {
+  static void decrementUnreadCount(String tableName) {
+    if (isNewsFromCurrentWeek(tableName) && unreadMajorNewsCount.value > 0) {
       unreadMajorNewsCount.value--;
     }
+  }
+
+  static bool isNewsFromCurrentWeek(String tableName) {
+    final now = DateTime.now();
+    final monday = now.subtract(Duration(days: now.weekday - 1));
+    final sunday = monday.add(const Duration(days: 6));
+    final currentWeekTable =
+        '${DateFormat('ddMMyy').format(monday)}-${DateFormat('ddMMyy').format(sunday)}';
+
+    return tableName == currentWeekTable;
   }
 
   // create a composite key for a specific table and news ID

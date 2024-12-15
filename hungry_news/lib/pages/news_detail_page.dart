@@ -115,7 +115,8 @@ Future<Map<String, dynamic>> fetchArticleContent(
       "content": [
         [
           const TextSpan(
-            text: "No internet connection. Please check your connection and try again.",
+            text:
+                "No internet connection. Please check your connection and try again.",
             style: TextStyle(color: Colors.red),
           )
         ]
@@ -898,11 +899,10 @@ class NewsDetailPageState extends State<NewsDetailPage> {
         isRead = true;
       });
 
-      // Update the read state globally
       await NewsStateManager.setIsRead(widget.tableName, widget.newsId, true);
 
-      // Decrement unread count globally
-      NewsStateManager.decrementUnreadCount();
+      // Validate if the news belongs to the current Major News week
+      NewsStateManager.decrementUnreadCount(widget.tableName);
     }
 
     return Padding(

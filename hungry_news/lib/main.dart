@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:badges/badges.dart' as badges;
 
 import 'pages/curated_news_page.dart';
 import 'pages/past_news_page.dart';
@@ -256,31 +255,67 @@ class _MyHomePageState extends State<MyHomePage> {
         bottomNavigationBar: BottomNavigationBar(
           items: <BottomNavigationBarItem>[
             const BottomNavigationBarItem(
-                icon: Icon(Icons.local_library), label: 'Curated News'),
+              icon: Icon(Icons.local_library),
+              label: 'Curated News',
+            ),
             const BottomNavigationBarItem(
-                icon: Icon(Icons.history), label: 'Past News'),
+              icon: Icon(Icons.history),
+              label: 'Past News',
+            ),
             BottomNavigationBarItem(
-              icon: ValueListenableBuilder<int>(
-                valueListenable: NewsStateManager.unreadMajorNewsCount,
-                builder: (context, unreadCount, _) {
-                  return badges.Badge(
-                    badgeContent: Text(
-                      '$unreadCount',
-                      style: const TextStyle(color: Colors.white, fontSize: 10),
-                    ),
-                    showBadge: unreadCount > 0,
-                    child: const Icon(Icons.public),
-                  );
-                },
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.public, size: 24),
+                  ValueListenableBuilder<int>(
+                    valueListenable: NewsStateManager.unreadMajorNewsCount,
+                    builder: (context, unreadCount, _) {
+                      return unreadCount > 0
+                          ? Positioned(
+                              top: -4,
+                              right: -20,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 20,
+                                  minHeight: 20,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '$unreadCount',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : const SizedBox
+                              .shrink(); // empty
+                    },
+                  ),
+                ],
               ),
               label: 'Major News',
             ),
             const BottomNavigationBarItem(
-                icon: Icon(Icons.save), label: 'Saved News'),
+              icon: Icon(Icons.save),
+              label: 'Saved News',
+            ),
             const BottomNavigationBarItem(
-                icon: Icon(Icons.search), label: 'Search'),
+              icon: Icon(Icons.search),
+              label: 'Search',
+            ),
             const BottomNavigationBarItem(
-                icon: Icon(Icons.settings), label: 'Settings'),
+              icon: Icon(Icons.settings),
+              label: 'Settings',
+            ),
           ],
           currentIndex: _selectedIndex,
           selectedItemColor: Colors.amber[800],
