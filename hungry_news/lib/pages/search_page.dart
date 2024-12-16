@@ -325,6 +325,13 @@ class SearchNewsPageState extends State<SearchNewsPage> {
                             .bodyMedium
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
+                      Text(
+                        "Searches up to 3 months old news",
+                        style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium!
+                              .copyWith(fontStyle: FontStyle.italic),
+                      ),
                     ],
                   ),
                 ),

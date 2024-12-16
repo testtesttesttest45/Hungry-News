@@ -270,15 +270,25 @@ class _MyHomePageState extends State<MyHomePage> {
                   ValueListenableBuilder<int>(
                     valueListenable: NewsStateManager.unreadMajorNewsCount,
                     builder: (context, unreadCount, _) {
+                      // unreadCount = 10;
                       return unreadCount > 0
                           ? Positioned(
-                              top: -4,
-                              right: -20,
+                              top: -6,
+                              right: unreadCount >= 100
+                                  ? -20
+                                  : unreadCount >= 10
+                                      ? -12
+                                      : -8,
                               child: Container(
-                                padding: const EdgeInsets.all(4),
+                                padding: EdgeInsets.symmetric(
+                                  vertical: 2,
+                                  horizontal: unreadCount >= 100
+                                      ? 6
+                                      : 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.red,
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                                 constraints: const BoxConstraints(
                                   minWidth: 20,
@@ -297,7 +307,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               ),
                             )
                           : const SizedBox
-                              .shrink(); // empty
+                              .shrink(); // Empty widget if no unread count
                     },
                   ),
                 ],

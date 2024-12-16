@@ -45,6 +45,21 @@ Future<Map<String, dynamic>> fetchArticleContent(
       }
 
       if (url.contains("bbc.com")) {
+        bool videoFound =
+            document.querySelector('div[data-component="video-block"]') != null;
+        if (videoFound) {
+          paragraphs.insert(
+            0,
+            [
+              const TextSpan(
+                text:
+                    "This article contains video(s). Please use the link at the bottom of this page to view them.\n",
+                style:
+                    TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+              )
+            ],
+          );
+        }
         processParagraphs('div[data-component="text-block"] p');
 
         document

@@ -563,12 +563,12 @@ class CuratedNewsPageState extends State<CuratedNewsPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Past 10 Weeks'),
+          title: const Text('Past 12 Weeks'),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
               shrinkWrap: true,
-              itemCount: 10,
+              itemCount: 12,
               reverse: false,
               itemBuilder: (context, index) {
                 DateTime startOfWeek =

@@ -289,7 +289,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                               .bodyMedium
                               ?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.primary),
+                                  color: Theme.of(context).colorScheme.secondary),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
