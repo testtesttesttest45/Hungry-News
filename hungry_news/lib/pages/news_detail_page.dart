@@ -32,14 +32,113 @@ Future<Map<String, dynamic>> fetchArticleContent(
           if (excludeAds &&
               (element.text.contains("Advertisement") ||
                   element.text.contains("Copyright") ||
-                  element.text.contains("Stay updated"))) {
-            return; // Skip boilerplate or ads
+                  element.text.contains("Stay updated") ||
+                  element.text.contains("CDATA") ||
+                  element.text.contains("script"))) {
+            return;
           }
 
-          final spans =
-              _extractTextAndLinks(element, unescape, context, baseUrl: url);
-          if (spans.isNotEmpty) {
-            paragraphs.add(spans);
+          // Case 1: Handle <p> tags with <br> tags inside
+          if (element.localName == 'p') {
+            if (element.innerHtml.contains('<br')) {
+              final segments = element.innerHtml
+                  .split(RegExp(r'<br\s*/?>')) // Split by <br> tags
+                  .map((segment) => segment.trim())
+                  .where((segment) => segment.isNotEmpty);
+
+              for (final segment in segments) {
+                final tempElement = dom.Element.html('<div>$segment</div>');
+                final spans = _extractTextAndLinks(
+                  tempElement,
+                  unescape,
+                  context,
+                  baseUrl: url,
+                );
+                if (spans.isNotEmpty) {
+                  paragraphs
+                      .add(spans); // Add each <br>-split segment as a paragraph
+                }
+              }
+            } else {
+              // If no <br>, treat the <p> tag as a single paragraph
+              final spans = _extractTextAndLinks(
+                element,
+                unescape,
+                context,
+                baseUrl: url,
+              );
+              if (spans.isNotEmpty) {
+                paragraphs.add(spans);
+              }
+            }
+          }
+          // Case 2: Handle <div> with nested <p> tags
+          else if (element.localName == 'div' &&
+              element.querySelectorAll('p').isNotEmpty) {
+            element.querySelectorAll('p').forEach((pElement) {
+              if (pElement.innerHtml.contains('<br')) {
+                final segments = pElement.innerHtml
+                    .split(RegExp(r'<br\s*/?>')) // Split by <br> tags
+                    .map((segment) => segment.trim())
+                    .where((segment) => segment.isNotEmpty);
+
+                for (final segment in segments) {
+                  final tempElement = dom.Element.html('<div>$segment</div>');
+                  final spans = _extractTextAndLinks(
+                    tempElement,
+                    unescape,
+                    context,
+                    baseUrl: url,
+                  );
+                  if (spans.isNotEmpty) {
+                    paragraphs.add(spans);
+                  }
+                }
+              } else {
+                final spans = _extractTextAndLinks(
+                  pElement,
+                  unescape,
+                  context,
+                  baseUrl: url,
+                );
+                if (spans.isNotEmpty) {
+                  paragraphs.add(spans);
+                }
+              }
+            });
+          }
+          // Case 3: Handle elements with <br> tags directly
+          else if (element.innerHtml.contains('<br')) {
+            final segments = element.innerHtml
+                .split(RegExp(r'<br\s*/?>'))
+                .map((segment) => segment.trim())
+                .where((segment) => segment.isNotEmpty);
+
+            for (final segment in segments) {
+              final tempElement = dom.Element.html('<div>$segment</div>');
+              final spans = _extractTextAndLinks(
+                tempElement,
+                unescape,
+                context,
+                baseUrl: url,
+              );
+              if (spans.isNotEmpty) {
+                paragraphs
+                    .add(spans);
+              }
+            }
+          }
+          // Case 4: Handle plain text in other elements
+          else {
+            final spans = _extractTextAndLinks(
+              element,
+              unescape,
+              context,
+              baseUrl: url,
+            );
+            if (spans.isNotEmpty) {
+              paragraphs.add(spans);
+            }
           }
         });
       }
@@ -72,7 +171,7 @@ Future<Map<String, dynamic>> fetchArticleContent(
           }
         });
       } else if (url.contains("channelnewsasia.com")) {
-        processParagraphs('div.text-long p');
+        processParagraphs('div.text-long', excludeAds: true);
 
         document
             .querySelectorAll('div.text-long img, figure img')
