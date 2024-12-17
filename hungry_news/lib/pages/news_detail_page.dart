@@ -123,8 +123,7 @@ Future<Map<String, dynamic>> fetchArticleContent(
                 baseUrl: url,
               );
               if (spans.isNotEmpty) {
-                paragraphs
-                    .add(spans);
+                paragraphs.add(spans);
               }
             }
           }
@@ -426,18 +425,26 @@ class NewsDetailPageState extends State<NewsDetailPage> {
     _pageController = PageController(initialPage: currentPage);
     flutterTts = FlutterTts();
 
-    final compositeKey =
-        NewsStateManager.generateCompositeKey(widget.tableName, widget.newsId);
-    isRead = NewsStateManager.allReadStatesNotifier.value[compositeKey] ??
-        widget.isRead;
-    isSaved = NewsStateManager.allSavedStatesNotifier.value[compositeKey] ??
-        widget.isSaved;
+    _initializeReadAndSavedState();
 
     flutterTts.setErrorHandler((msg) {
       setState(() {
         isReading = false;
         activeParagraphIndex = null; // Reset state on error
       });
+    });
+  }
+
+  Future<void> _initializeReadAndSavedState() async {
+
+    final latestIsRead =
+        await NewsStateManager.getIsRead(widget.tableName, widget.newsId);
+    final latestIsSaved =
+        await NewsStateManager.getIsSaved(widget.tableName, widget.newsId);
+
+    setState(() {
+      isRead = latestIsRead ?? false;
+      isSaved = latestIsSaved ?? false;
     });
   }
 

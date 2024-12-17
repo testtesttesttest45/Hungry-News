@@ -219,10 +219,10 @@ class MajorNewsPageState extends State<MajorNewsPage> {
       bool isSaved = news['is_saved'] == true;
       int newsId = news['news_id'];
       int impactLevel = news['impact_level'];
-      final isReadGlobal =
-          NewsStateManager.allReadStatesNotifier.value[news['news_id']] ??
-              false;
-
+      // final isReadGlobal =
+      //     NewsStateManager.allReadStatesNotifier.value[news['news_id']] ??
+      //         false;
+      
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -238,7 +238,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                     source: source,
                     isSaved: isSaved,
                     newsId: newsId,
-                    isRead: isReadGlobal,
+                    isRead: isRead,
                     originalDatetime: newsDateTime,
                     tableName: news['table_name'],
                     impactLevel: impactLevel,
@@ -247,6 +247,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                   ),
                 ),
               );
+              
 
               if (updatedData != null) {
                 final updatedIsRead = updatedData['is_read'] ?? false;
