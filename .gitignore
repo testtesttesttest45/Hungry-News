@@ -8,17 +8,17 @@
 **/*.log
 
 # Dataset directory and files in the backend
-news_backend/dataset/
-news_backend/*.csv
+machine_learning/dataset/
+machine_learning/*.csv
 
 # Virtual environment in the backend
-news_backend/venv/
+machine_learning/venv/
 
 # Jupyter notebook checkpoints in the backend
-news_backend/.ipynb_checkpoints/
+machine_learning/.ipynb_checkpoints/
 
 # Machine learning models in the backend
-news_backend/*.joblib
+machine_learning/*.joblib
 
 # Other files and folders to ignore in both frontend and backend
 *.sqlite3
