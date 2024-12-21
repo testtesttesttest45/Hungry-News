@@ -67,23 +67,81 @@ Hosting: The backend code is hosted on Render, a cloud platform, ensuring that t
 
 # Pages
 
-## Major News Page
+### Major News Page
 - This is the main page and purpose of the app. It displays only the highest impact news. Click on a news on this page or any other page to view the details and contents of the news. You can also Summarise the news, Listen to the news, or click on the citation links to view more information about the news.
 - This is made possible thanks to a Lambda script that executes occationally for the extraction of RSS feed from the news websites (CNA and BBC) and inserted into a database.
 
-## Past News Page
+### Past News Page
 - Displays major news from the past weeks, up to 12 weeks.
 
-## Curated News Page
+### Curated News Page
 - Displays local Singapore news as well as global medium impact news.
 - Easy to use toggle buttons to filter news here based on "Singapore" and "All".
 
-## Saved News Page
+### Saved News Page
 - Displays news that you have saved. You can save news by clicking on the "Save" icon on the news details page of any news.
 
-## Search News Page
+### Search News Page
 - Search for news articles by title. Searches up to 12 weeks of news.
 
 ## Settings Page
 - Change the theme of the app to light or dark mode.
 - App state management: Reset the app to its initial state. All saved news, theme settings, and news marked as read will all be cleared.
+
+## Setup Instructions
+
++ Clone the repository.
++ Open the project in Visual Studio Code and set up the folders:
+
+### 1. `machine_learning` Folder
+This folder contains datasets for training the model.
+
+```bash
+cd machine_learning
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+# To create a new model, run the following command:
+python main.py
+# The accuracy of the model depends on the manual ratings given in dataset.csv.
+# Upload this model to AWS S3 to update the model for the Lambda function.
+```
+
+### 2. `lambda` Folder
+This folder contains the Lambda function code.
+
++ Not required to touch this folder unless the Lambda function needs to be updated.
++ Check the database credentials in the code.
++ The updating of the function from Docker to AWS Lambda is documented in the Documentation link above as well as instructions on how to debug locally.
+
+### 3. `hungry_news` Folder
+This folder contains the Flutter project.
+
+```bash
+cd hungry_news
+flutter pub get
+flutter run
+# Press Ctrl + Shift + P and select "Flutter: Select Device" to select an emulator or physical device to run the app on.
+# On any dart file in the pages folder, press F5 to run the app on an emulator or physical device.
+# To build the APK, run the following command:
+flutter build apk
+```
+
+### 4. `hungry_news/backend` Folder
+This folder contains the backend code that connects with the database.
+
+```bash
+cd hungry_news/backend
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+# Create an env file and add the database credentials:
+# DB_USER=u411477811_admin2
+# DB_PASSWORD=Lambdatest***
+# DB_HOST=srv1154.hstgr.io
+# DB_NAME=u411477811_lambdatest
+# Run the backend with the following command:
+python app.py
+# Use the IP address provided in the console to connect to the backend from the Flutter app if debugging on the Android Studio emulator; else, debug on Chrome works fine.
+# Be sure to update the backend URL in the Flutter app if testing locally.
+```
