@@ -85,7 +85,7 @@ Hosting: The backend code is hosted on Render, a cloud platform, ensuring that t
 ### Search News Page
 - Search for news articles by title. Searches up to 12 weeks of news.
 
-## Settings Page
+### Settings Page
 - Change the theme of the app to light or dark mode.
 - App state management: Reset the app to its initial state. All saved news, theme settings, and news marked as read will all be cleared.
 
