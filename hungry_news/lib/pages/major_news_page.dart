@@ -75,17 +75,14 @@ class MajorNewsPageState extends State<MajorNewsPage> {
     });
   }
 
-  void _onReadStateUpdated() {
-    setState(() {
-      final readStates = NewsStateManager.allReadStatesNotifier.value;
-      for (var news in newsData) {
-        final key = NewsStateManager.generateCompositeKey(
-            news['table_name'], news['news_id']);
-        if (readStates.containsKey(key)) {
-          news['is_read'] = readStates[key];
-        }
-      }
-    });
+  Future<void> _onReadStateUpdated() async {
+    await Future.wait(newsData.map((news) async {
+      final tableName = news['table_name'];
+      final newsId = news['news_id'];
+      final isRead = await NewsStateManager.getIsRead(tableName, newsId);
+      news['is_read'] = isRead ?? false;
+    }));
+    setState(() {});
   }
 
   DateTime getToday() {
@@ -222,7 +219,7 @@ class MajorNewsPageState extends State<MajorNewsPage> {
       // final isReadGlobal =
       //     NewsStateManager.allReadStatesNotifier.value[news['news_id']] ??
       //         false;
-      
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -247,7 +244,6 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                   ),
                 ),
               );
-              
 
               if (updatedData != null) {
                 final updatedIsRead = updatedData['is_read'] ?? false;
@@ -290,7 +286,8 @@ class MajorNewsPageState extends State<MajorNewsPage> {
                               .bodyMedium
                               ?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.secondary),
+                                  color:
+                                      Theme.of(context).colorScheme.secondary),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),

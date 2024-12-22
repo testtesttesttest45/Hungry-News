@@ -58,17 +58,14 @@ class PastNewsPageState extends State<PastNewsPage> {
     });
   }
 
-  void _onReadStateUpdated() {
-    setState(() {
-      final readStates = NewsStateManager.allReadStatesNotifier.value;
-      for (var news in newsData) {
-        final key = NewsStateManager.generateCompositeKey(
-            news['table_name'], news['news_id']);
-        if (readStates.containsKey(key)) {
-          news['is_read'] = readStates[key];
-        }
-      }
-    });
+  Future<void> _onReadStateUpdated() async {
+    await Future.wait(newsData.map((news) async {
+      final tableName = news['table_name'];
+      final newsId = news['news_id'];
+      final isRead = await NewsStateManager.getIsRead(tableName, newsId);
+      news['is_read'] = isRead ?? false;
+    }));
+    setState(() {});
   }
 
   String getFormattedDate() {
@@ -170,9 +167,11 @@ class PastNewsPageState extends State<PastNewsPage> {
         Center(
           child: Text(
             errorMessage,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error),
-            textAlign:
-                  TextAlign.center,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: Theme.of(context).colorScheme.error),
+            textAlign: TextAlign.center,
           ),
         )
       ];
@@ -260,7 +259,8 @@ class PastNewsPageState extends State<PastNewsPage> {
                               .bodyMedium
                               ?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.secondary),
+                                  color:
+                                      Theme.of(context).colorScheme.secondary),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),

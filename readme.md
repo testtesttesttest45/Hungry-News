@@ -17,7 +17,8 @@
 
 ### Documentation attached <a href="https://drive.google.com/file/d/1qOgbexXZgI0abr6tl8q_WpDy54jWeFfa/view?usp=drive_link" target="_blank">here</a>.
 
-
+### Demo
+A demo of the application is available on YouTube <a href="https://www.youtube.com/watch?v=HwIwd8xTI7U" target="_blank">here</a>.
 
 ## How is this app made?
 
