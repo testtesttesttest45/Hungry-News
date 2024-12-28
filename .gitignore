@@ -26,3 +26,5 @@ machine_learning/*.joblib
 .vscode/
 .idea/
 *.swp
+
+lambda/venv/

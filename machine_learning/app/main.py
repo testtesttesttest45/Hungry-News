@@ -9,7 +9,6 @@ from bs4 import BeautifulSoup
 import requests
 
 rss_urls = {
-    "cna_latest": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml",
     "cna_singapore": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=10416",
     "cna_asia": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6511",
     "cna_world": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6311",
