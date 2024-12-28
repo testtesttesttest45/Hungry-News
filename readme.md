@@ -15,7 +15,7 @@
 ### Android
 1. Download the APK file <a href="https://github.com/testtesttesttest45/Hungry-News/releases/download/v1/hungry_news.apk" download>here</a>.
 
-### Documentation attached <a href="https://drive.google.com/file/d/1qOgbexXZgI0abr6tl8q_WpDy54jWeFfa/view?usp=drive_link" target="_blank">here</a>.
+### Documentation attached <a href="https://drive.google.com/file/d/1nreUljz76gKVVYewoLV7wI9YjBD7sNRC/view?usp=drive_link" target="_blank">here</a>.
 
 ### Demo
 A demo of the application is available on YouTube <a href="https://www.youtube.com/watch?v=HwIwd8xTI7U" target="_blank">here</a>.
@@ -102,7 +102,10 @@ cd machine_learning
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
-# To create a new model, run the following command:
+# Create a folder "dataset" and add the dataset.csv file found in the GitHub repository releases.
+# Duplicate the dataset.csv file and rename it to "dataset_copy.csv" and place it outside the dataset folder.
+# A trained model is already provided in the GitHub repository releases. Place it in the machine_learning folder.
+# Else, to create a new model, run the following command:
 python main.py
 # The accuracy of the model depends on the manual ratings given in dataset.csv.
 # Upload this model to AWS S3 to update the model for the Lambda function.
