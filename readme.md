@@ -15,7 +15,7 @@
 ### Android
 1. Download the APK file <a href="https://github.com/testtesttesttest45/Hungry-News/releases/download/v1/hungry_news.apk" download>here</a>.
 
-### Documentation attached <a href="https://drive.google.com/file/d/1nreUljz76gKVVYewoLV7wI9YjBD7sNRC/view?usp=drive_link" target="_blank">here</a>.
+### Documentation attached <a href="https://drive.google.com/file/d/1sLwXMablZD_wxT48DldxeKpnlVRMIHQQ/view?usp=drive_link" target="_blank">here</a>.
 
 ### Demo
 A demo of the application is available on YouTube <a href="https://www.youtube.com/watch?v=HwIwd8xTI7U" target="_blank">here</a>.
