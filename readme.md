@@ -8,7 +8,7 @@
 
 + Fast and friendly interface with no bugs or ads.
 
-+ Project started on 16 November 2024 and completed on 21 December 2024.
++ Project started on 16 November 2024 and completed on 27 December 2024, with plannings, researching, and learning new programming languages attempted 3 months prior when project idea was first crafted.
 
 ## Installation
 
