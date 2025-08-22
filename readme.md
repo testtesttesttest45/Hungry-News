@@ -2,7 +2,7 @@
   <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/appstore-768x768.jpg" alt="logo" width="300"/>
 </p>
 
-# Hungry News Overview
+# Overview
 
 + Hungry News is an app for Android phones. It offers a user friendly interface and displays quality, impactful articles all of which are worthy of reading.
 
@@ -13,16 +13,6 @@
 + Fast and friendly interface with no bugs or ads.
 
 + Project started on 16 November 2024 and completed on 27 December 2024, with plannings, researching, and learning new programming languages attempted 3 months prior when project idea was first crafted.
-
-## Installation
-
-### Android
-1. Download the APK file <a href="https://github.com/testtesttesttest45/Hungry-News/releases/download/v1/hungry_news.apk" download>here</a>.
-
-### Documentation attached <a href="https://drive.google.com/file/d/1sLwXMablZD_wxT48DldxeKpnlVRMIHQQ/view?usp=drive_link" target="_blank">here</a>.
-
-### Demo
-A demo of the application is available on YouTube <a href="https://www.youtube.com/watch?v=HwIwd8xTI7U" target="_blank">here</a>.
 
 ## How is this app made?
 
@@ -93,6 +83,8 @@ Hosting: The backend code is hosted on Render, a cloud platform, ensuring that t
 - Change the theme of the app to light or dark mode.
 - App state management: Reset the app to its initial state. All saved news, theme settings, and news marked as read will all be cleared.
 
+---
+
 ## Setup Instructions
 
 + Clone the repository.
@@ -154,51 +146,63 @@ python app.py
 # Be sure to update the backend URL in the Flutter app if testing locally.
 ```
 
+---
+
 ## Screenshots
 
 <div align="center">
-  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-1.png" alt="Major News Page" width="100%"/><br/>
+  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-1.png" alt="Major News Page"/><br/>
   <em>Major News Page</em>
 </div>
 <br/><br/>
 
 <div align="center">
-  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-2.png" alt="Past News Page" width="100%"/><br/>
+  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-2.png" alt="Past News Page"/><br/>
   <em>Past News Page</em>
 </div>
 <br/><br/>
 
 <div align="center">
-  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-3.png" alt="Curated News Page" width="100%"/><br/>
+  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-3.png" alt="Curated News Page"/><br/>
   <em>Curated News Page</em>
 </div>
 <br/><br/>
 
 <div align="center">
-  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-4.png" alt="Saved News Page" width="100%"/><br/>
+  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-4.png" alt="Saved News Page"/><br/>
   <em>Saved News Page</em>
 </div>
 <br/><br/>
 
 <div align="center">
-  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-5.png" alt="Settings Page" width="100%"/><br/>
+  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-5.png" alt="Settings Page"/><br/>
   <em>Settings Page</em>
 </div>
 <br/><br/>
 
 <div align="center">
-  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-6.png" alt="News Detail Page (top)" width="100%"/><br/>
+  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-6.png" alt="News Detail Page (top)"/><br/>
   <em>News Detail Page (top)</em>
 </div>
 <br/><br/>
 
 <div align="center">
-  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-7.png" alt="News Detail Page (bottom)" width="100%"/><br/>
+  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-7.png" alt="News Detail Page (bottom)"/><br/>
   <em>News Detail Page (bottom)</em>
 </div>
 <br/><br/>
 
 <div align="center">
-  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-8.png" alt="Dark theme" width="100%"/><br/>
+  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-8.png" alt="Dark theme" /><br/>
   <em>Dark theme</em>
 </div>
+
+---
+
+## Download Links
+
+[Hungry News (Download for Android)](https://github.com/testtesttesttest45/Hungry-News/releases/download/v1/hungry_news.apk)
+
+Documentation attached <a href="https://drive.google.com/file/d/1sLwXMablZD_wxT48DldxeKpnlVRMIHQQ/view?usp=drive_link" target="_blank">here</a>.
+
+YouTube Demo: https://www.youtube.com/watch?v=HwIwd8xTI7U
