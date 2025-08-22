@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/appstore-768x768.jpg" alt="logo" width="300"/>
+  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-logo.png" alt="logo" width="300"/>
 </p>
 
 # Overview
