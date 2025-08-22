@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/appstore-768x768.jpg" alt="logo" width="300"/>
+</p>
+
 # Hungry News Overview
 
 + Hungry News is an app for Android phones. It offers a user friendly interface and displays quality, impactful articles all of which are worthy of reading.
@@ -149,3 +153,52 @@ python app.py
 # Use the IP address provided in the console to connect to the backend from the Flutter app if debugging on the Android Studio emulator; else, debug on Chrome works fine.
 # Be sure to update the backend URL in the Flutter app if testing locally.
 ```
+
+## Screenshots
+
+<div align="center">
+  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-1.png" alt="Major News Page" width="100%"/><br/>
+  <em>Major News Page</em>
+</div>
+<br/><br/>
+
+<div align="center">
+  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-2.png" alt="Past News Page" width="100%"/><br/>
+  <em>Past News Page</em>
+</div>
+<br/><br/>
+
+<div align="center">
+  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-3.png" alt="Curated News Page" width="100%"/><br/>
+  <em>Curated News Page</em>
+</div>
+<br/><br/>
+
+<div align="center">
+  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-4.png" alt="Saved News Page" width="100%"/><br/>
+  <em>Saved News Page</em>
+</div>
+<br/><br/>
+
+<div align="center">
+  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-5.png" alt="Settings Page" width="100%"/><br/>
+  <em>Settings Page</em>
+</div>
+<br/><br/>
+
+<div align="center">
+  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-6.png" alt="News Detail Page (top)" width="100%"/><br/>
+  <em>News Detail Page (top)</em>
+</div>
+<br/><br/>
+
+<div align="center">
+  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-7.png" alt="News Detail Page (bottom)" width="100%"/><br/>
+  <em>News Detail Page (bottom)</em>
+</div>
+<br/><br/>
+
+<div align="center">
+  <img src="https://quek-wei-lin-website.in/wp-content/uploads/2024/12/hungry-news-content-image-8.png" alt="Dark theme" width="100%"/><br/>
+  <em>Dark theme</em>
+</div>
